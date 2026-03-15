@@ -12,7 +12,7 @@ class LoginUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,18 @@ class LoginUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            "email"=> "string|exists:users,email",
+            "password"=> "string|required",
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            "email.string"=> "L'email doit être une chaîne de caractères",
+            "email.exists"=> "L'email n'existe pas",
+            "password.string"=> "Le mot de passe doit être une chaîne de caractères",
+            "password.required"=> "Le mot de passe est requis",
         ];
     }
 }
