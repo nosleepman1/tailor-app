@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\Client;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
+use Illuminate\Support\Facades\Auth;
 
 class ClientPolicy
 {
@@ -13,7 +14,7 @@ class ClientPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return Auth::user()->role === "admin";
     }
 
     /**
@@ -21,7 +22,7 @@ class ClientPolicy
      */
     public function view(User $user, Client $client): bool
     {
-        return false;
+        return Auth::user()->role === "admin";
     }
 
     /**
@@ -29,7 +30,7 @@ class ClientPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return Auth::user()->role === "admin";
     }
 
     /**
@@ -37,7 +38,7 @@ class ClientPolicy
      */
     public function update(User $user, Client $client): bool
     {
-        return false;
+        return Auth::user()->role === "admin";
     }
 
     /**
@@ -45,7 +46,7 @@ class ClientPolicy
      */
     public function delete(User $user, Client $client): bool
     {
-        return false;
+        return Auth::user()->role === "admin";
     }
 
     /**
