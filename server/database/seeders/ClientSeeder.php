@@ -12,6 +12,6 @@ class ClientSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        
     }
 }
