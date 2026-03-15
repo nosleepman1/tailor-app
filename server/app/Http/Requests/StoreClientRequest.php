@@ -36,6 +36,7 @@ class StoreClientRequest extends FormRequest
             "cuisse"=> "nullable|integer|min:0",
             "biceps"=> "nullable|integer|min:0",
             "bras"=> "nullable|integer|min:0",
+            "image"=> "nullable|image|mimes:jpeg,png,jpg,gif,svg|max:4096",
         ];
     }
 
@@ -57,6 +58,9 @@ class StoreClientRequest extends FormRequest
             "cuisse.integer"=> "La cuisse doit être un entier",
             "biceps.integer"=> "Le biceps doit être un entier",
             "bras.integer"=> "Le bras doit être un entier",
+            "image.image"=> "Le fichier doit être une image",
+            "image.mimes"=> "L'image doit être au format jpeg, png, jpg, gif ou svg",
+            "image.max"=> "L'image ne doit pas dépasser 4 Mo",
         ];
     }
 }
