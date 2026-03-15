@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth ;
 
 class UpdateClientRequest extends FormRequest
 {
@@ -12,7 +14,7 @@ class UpdateClientRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return Auth::user()->role === "admin";
     }
 
     /**
@@ -23,7 +25,40 @@ class UpdateClientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            "firstname"=> "required|string|min:3",
+            "lastname"=> "required|string|min:3",
+            "phone"=> "nullable|string|max:15",
+            "epaule"=> "nullable|integer|min:0",
+            "poitrine"=> "nullable|integer|min:0",
+            "taille"=> "nullable|integer|min:0",
+            "hanche"=> "nullable|integer|min:0",
+            "cou"=> "nullable|integer|min:0",
+            "pantalon"=> "nullable|integer|min:0",
+            "fesse"=> "nullable|integer|min:0",
+            "cuisse"=> "nullable|integer|min:0",
+            "biceps"=> "nullable|integer|min:0",
+            "bras"=> "nullable|integer|min:0",
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            "firstname.required"=> "Le prénom est requis",
+            "lastname.required"=> "Le nom est requis",
+            "firstname.min"=> "Le prénom doit comporter au moins 3 caractères",
+            "lastname.min"=> "Le nom doit comporter au moins 3 caractères",
+            "phone.max"=> "Le numéro de téléphone ne doit pas dépasser 15 caractères",
+            "epaule.integer"=> "L'épaule doit être un entier",
+            "poitrine.integer"=> "La poitrine doit être un entier",
+            "taille.integer"=> "La taille doit être un entier",
+            "hanche.integer"=> "La hanche doit être un entier",
+            "cou.integer"=> "Le cou doit être un entier",
+            "pantalon.integer"=> "Le pantalon doit être un entier",
+            "fesse.integer"=> "La fesse doit être un entier",
+            "cuisse.integer"=> "La cuisse doit être un entier",
+            "biceps.integer"=> "Le biceps doit être un entier",
+            "bras.integer"=> "Le bras doit être un entier",
         ];
     }
 }

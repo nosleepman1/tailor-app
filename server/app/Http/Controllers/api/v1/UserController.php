@@ -30,7 +30,7 @@ class UserController extends Controller
         }
         return response()->json([
             "message"=> "register failed",
-            "user"=> null,
+            "user"=> null
             ],0);
     }
 
