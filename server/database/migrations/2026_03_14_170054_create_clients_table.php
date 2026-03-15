@@ -13,17 +13,20 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->string('prenom');
-            $table->string('nom');
-            $table->integer('epaule');
-            $table->integer('poitrine');
-            $table->integer('taille');
-            $table->integer('hanche');
-            $table->integer('cou');
-            $table->integer('pantalon');
-            $table->integer('fesse');
-            $table->integer('cuisse');
-            $table->integer('biceps');
+            $table->string('firstname');
+            $table->string('lastname');
+            $table->float('price')->nullable();
+            $table->string('phone')->nullable();
+            $table->integer('epaule')->nullable();
+            $table->integer('poitrine')->nullable();
+            $table->integer('taille')->nullable();
+            $table->integer('hanche')->nullable();
+            $table->integer('cou')->nullable();
+            $table->integer('pantalon')->nullable();
+            $table->integer('fesse')->nullable();
+            $table->integer('cuisse')->nullable();
+            $table->integer('biceps')->nullable();
+            $table->integer('bras')->nullable();
             $table->string('image')->nullable();
             $table->timestamps();
         });
