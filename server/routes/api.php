@@ -11,4 +11,7 @@ Route::get('/user', function (Request $request) {
 
 
 Route::apiResource("v1/users", UserController::class);
+Route::post("v1/login", [UserController::class, "login"])->name("login");
+
+
 Route::apiResource("v1/clients", ClientController::class)->middleware("auth:sanctum");

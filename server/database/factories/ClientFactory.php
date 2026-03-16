@@ -20,7 +20,8 @@ class ClientFactory extends Factory
         return [
             'firstname' => fake()->firstName(),
             'lastname' => fake()->lastName(),
-            'phone' => fake()->phoneNumber(),
+            'phone' => fake()->numerify('+221 77 ### ## ##'),
+            'price' => fake()->numberBetween(10000.00, 150000.00),
             'taille' => fake()->numberBetween(150, 200),
             'poitrine' => fake()->numberBetween(80, 120),
             'epaule' => fake()->numberBetween(40, 60),

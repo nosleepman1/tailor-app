@@ -12,7 +12,7 @@ class ClientController extends Controller
 {
     public function __construct()
     {
-        $this->authorizeResource(Client::class);
+        //$this->authorizeResource(Client::class, 'client');
     }
 
 
