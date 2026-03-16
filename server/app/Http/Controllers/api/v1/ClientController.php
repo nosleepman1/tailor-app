@@ -12,7 +12,7 @@ class ClientController extends Controller
 {
     public function __construct()
     {
-        $this->authorizeResource(Client::class);
+        //$this->authorizeResource(Client::class, 'client');
     }
 
 
@@ -23,7 +23,12 @@ class ClientController extends Controller
 
     public function store(StoreClientRequest $request)
     {
-        $client = Client::create($request->validated());
+        $data = $request->validated();
+        if($request->hasFile("image")){
+            $data["image"] = $request->file("image")->store("clients", "public");
+        }
+
+        $client = Client::create($data);
 
         return new ClientResource($client);
     }
