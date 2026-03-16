@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('firstname');
             $table->string('lastname');
             $table->float('price')->nullable();
+            $table->integer('manche')->nullable();
             $table->string('phone')->nullable();
             $table->integer('epaule')->nullable();
             $table->integer('poitrine')->nullable();
