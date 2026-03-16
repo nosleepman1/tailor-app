@@ -2,6 +2,10 @@
 
 use App\Models\User;
 
+use function Pest\Laravel\withHeaders;
+
+
+
 test('user can register', function () {
     $response = $this->postJson('/api/v1/users', [
         'firstname' => 'John',
