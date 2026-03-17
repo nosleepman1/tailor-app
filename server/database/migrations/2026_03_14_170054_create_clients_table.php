@@ -28,7 +28,8 @@ return new class extends Migration
             $table->integer('cuisse')->nullable();
             $table->integer('biceps')->nullable();
             $table->integer('bras')->nullable();
-            $table->string('image')->nullable();
+            $table->string('model_image')->nullable();
+            $table->string('tissus_image')->nullable();
             $table->timestamps();
         });
     }

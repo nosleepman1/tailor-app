@@ -1,16 +1,98 @@
-# React + Vite
+# TailleurPro — Frontend React
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend complet de l'application de gestion de tailleurs.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 18** + Vite
+- **Tailwind CSS** (mobile-first, dark theme)
+- **Axios** + intercepteurs Bearer Token
+- **React Router v6** (lazy loading + routes protégées)
+- **Chart.js / react-chartjs-2** (dashboards)
+- **Workbox / vite-plugin-pwa** (PWA + offline)
+- Mode **offline** avec file d'attente + auto-sync
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Installation
 
-## Expanding the ESLint configuration
+```bash
+cd client
+cp .env.example .env        # Configurer VITE_API_URL
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Build production
+
+```bash
+npm run build
+```
+
+---
+
+## Architecture
+
+```
+src/
+├── api/
+│   └── axios.js              # Instance Axios + intercepteurs Bearer Token
+├── services/
+│   ├── authService.js        # login / logout / getProfile
+│   ├── clientService.js      # CRUD clients (multipart/form-data)
+│   └── userService.js        # CRUD utilisateurs + toggleActive
+├── hooks/
+│   ├── useClients.js         # État clients + offline queue
+│   └── useUsers.js           # État utilisateurs
+├── contexts/
+│   └── AuthContext.jsx       # isAuthenticated, user, token, login(), logout()
+├── routes/
+│   └── AppRouter.jsx         # Routes lazy + ProtectedRoute + RoleRedirect
+├── components/
+│   ├── Layout.jsx            # Wrapper page avec Navbar
+│   ├── Navbar.jsx            # Sidebar desktop + bottom nav mobile
+│   ├── ClientCard.jsx        # Carte client réutilisable
+│   ├── StatCard.jsx          # Carte statistique dashboard
+│   ├── ConfirmModal.jsx      # Modal de confirmation
+│   ├── OfflineBanner.jsx     # Bannière hors ligne + sync feedback
+│   └── Loader.jsx            # Spinner + full screen loader
+├── pages/
+│   ├── Login.jsx
+│   ├── admin/
+│   │   ├── Dashboard.jsx     # Stats globales + charts
+│   │   ├── Users.jsx         # CRUD utilisateurs + toggle actif
+│   │   └── Clients.jsx       # Vue lecture tous clients
+│   └── client/
+│       ├── Dashboard.jsx     # Stats perso + chart evolution
+│       ├── Clients.jsx       # Liste clients + recherche + delete
+│       └── ClientForm.jsx    # Formulaire 3 étapes
+└── utils/
+    ├── offlineQueue.js       # localStorage queue
+    └── syncManager.js        # Auto-sync au retour en ligne
+```
+
+---
+
+## Fonctionnement du mode offline
+
+1. Lorsque `navigator.onLine === false`, les opérations (create/update/delete) sont stockées dans `localStorage` via `offlineQueue`
+2. Un `OfflineBanner` s'affiche en haut de l'écran
+3. Au retour en ligne, `syncManager` rejoue automatiquement toutes les requêtes en attente
+4. Un feedback de synchronisation confirme la réussite
+
+---
+
+## Rôles
+
+| Rôle    | Accès |
+|---------|-------|
+| `admin` | `/admin/dashboard`, `/admin/users`, `/admin/clients` |
+| `client` (tailleur) | `/dashboard`, `/clients`, `/clients/new`, `/clients/:id/edit` |
+
+---
+
+## Variables d'environnement
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | URL de base de l'API (ex: `http://localhost:8000/api/v1`) |
