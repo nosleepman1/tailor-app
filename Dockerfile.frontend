@@ -1,0 +1,36 @@
+# Étape 1 : Build
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copier les fichiers de dépendances
+COPY client/package.json client/package-lock.json* ./
+
+# Installer les dépendances
+RUN npm ci
+
+# Copier le reste du code source
+COPY client .
+
+# Build de l'application
+RUN npm run build
+
+# Étape 2 : Serveur de production
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Installer serveur HTTP simple pour servir les fichiers statiques
+RUN npm install -g serve
+
+# Copier les fichiers construits depuis l'étape builder
+COPY --from=builder /app/dist ./dist
+
+# Exposer le port
+EXPOSE 5173
+
+# Commande pour servir en développement (on peut aussi utiliser vite preview)
+CMD ["serve", "-s", "dist", "-l", "5173"]
+
+# Pour le développement, on peut aussi utiliser :
+# CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
