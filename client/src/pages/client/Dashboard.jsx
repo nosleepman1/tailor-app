@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Line, Doughnut } from 'react-chartjs-2'
+import { Line } from 'react-chartjs-2'
 import { Link } from 'react-router-dom'
+import ClientDetail from '@/components/ClientDetail'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
   LineElement, ArcElement, Tooltip, Legend, Filler
@@ -26,6 +27,7 @@ const chartOptions = {
 export default function ClientDashboard() {
   const { user } = useAuth()
   const { data: clients, loading } = useClients()
+  const [detailId, setDetailId] = useState(null)
   const [monthlyData, setMonthlyData] = useState([])
 
   useEffect(() => {
@@ -53,8 +55,8 @@ export default function ClientDashboard() {
     }]
   }
 
-  const totalRevenue = clients.reduce((sum, c) => sum + (Number(c.price) || 0), 0)
-  const activeClients = clients.filter(c => !c._offline).length
+  const totalRevenue = clients.reduce((sum, c) => (c.is_paid && c.price ? sum + (Number(c.price) || 0) : sum), 0)
+  const nonLivres = clients.filter(c => !c.livre).sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 
   return (
     <Layout
@@ -71,44 +73,47 @@ export default function ClientDashboard() {
         <div className="space-y-6 page-enter">
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <StatCard label="Total clients"   value={clients.length}  icon="◈" color="primary" />
-            <StatCard label="Chiffre d'affaires" value={`${totalRevenue.toLocaleString('fr-FR')} F`} icon="◎" color="gold" />
+            <StatCard label="Total clients" value={clients.length}  color="primary" />
+            <StatCard label="Chiffre d'affaires (payé)" value={`${totalRevenue.toLocaleString('fr-FR')} F`}  color="gold" />
           </div>
 
-          {/* Line chart */}
-          <div className="card p-4">
-            <h2 className="text-sm font-medium text-dark-300 mb-4">Clients par mois</h2>
-            <div className="h-40">
-              {monthlyData.length > 0 ? (
-                <Line data={lineData} options={chartOptions} />
-              ) : (
-                <div className="h-full flex items-center justify-center text-dark-500 text-sm">
-                  Pas encore de données
-                </div>
-              )}
-            </div>
-          </div>
+         
 
-          {/* Recent clients */}
+          {/* Commandes non livrées — triées par ancienneté (plus urgent = plus ancien) */}
           <div className="card p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-medium text-dark-300">Derniers clients</h2>
+              <h2 className="text-sm font-medium text-[var(--color-text-muted)]">Commandes à livrer ({nonLivres.length})</h2>
               <Link to="/clients" className="text-xs text-primary-400 hover:text-primary-300">Voir tout →</Link>
             </div>
-            {clients.length === 0 ? (
-              <p className="text-sm text-dark-500 text-center py-8">Aucun client pour l'instant</p>
+            {nonLivres.length === 0 ? (
+              <p className="text-sm text-[var(--color-text-subtle)] text-center py-8">
+                {clients.length === 0 ? 'Aucun client pour l\'instant' : 'Toutes les commandes sont livrées ✓'}
+              </p>
             ) : (
               <div className="space-y-2">
-                {clients.slice(0, 5).map(c => (
-                  <div key={c.id} className="flex items-center gap-3 py-2 border-b border-dark-700/30 last:border-0">
-                    <div className="w-8 h-8 rounded-lg bg-primary-600/20 border border-primary-500/20 flex items-center justify-center text-xs font-bold text-primary-300">
+                {nonLivres.slice(0, 8).map((c, i) => (
+                  <div
+                    key={c.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setDetailId(c.id)}
+                    onKeyDown={e => e.key === 'Enter' && setDetailId(c.id)}
+                    className="flex items-center gap-3 py-2 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-bg-muted)] rounded-lg -mx-1 px-1 transition-colors cursor-pointer"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-primary-600/30 text-primary-400 text-[10px] font-bold flex items-center justify-center shrink-0">
+                      {i + 1}
+                    </span>
+                    <div className="w-8 h-8 rounded-lg bg-primary-600/20 border border-primary-500/20 flex items-center justify-center text-xs font-bold text-primary-300 shrink-0">
                       {(c.firstname?.[0] || '') + (c.lastname?.[0] || '')}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-dark-200">{c.firstname} {c.lastname}</p>
-                      <p className="text-xs text-dark-500">{c.phone}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-[var(--color-text)] truncate">{c.firstname} {c.lastname}</p>
+                      <p className="text-xs text-[var(--color-text-subtle)]">{c.phone}</p>
                     </div>
-                    {c.price && <span className="text-xs font-mono text-gold-400">{Number(c.price).toLocaleString()} F</span>}
+                    <div className="flex flex-col items-end gap-0.5 shrink-0">
+                      {c.price && <span className="text-xs font-mono text-gold-400">{Number(c.price).toLocaleString()} F</span>}
+                      {c.is_paid ? <span className="badge badge-green text-[10px]">Payé</span> : <span className="badge badge-red text-[10px]">Non payé</span>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -116,6 +121,8 @@ export default function ClientDashboard() {
           </div>
         </div>
       )}
+
+      <ClientDetail clientId={detailId} onClose={() => setDetailId(null)} />
     </Layout>
   )
 }

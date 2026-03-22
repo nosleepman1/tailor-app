@@ -6,18 +6,19 @@ import { useClients } from '@/hooks/useClients'
 import clientService from '@/services/clientService'
 
 const STEPS = [
-  { id: 1, label: 'Informations', icon: '◎' },
-  { id: 2, label: 'Mesures',      icon: '◈' },
-  { id: 3, label: 'Modèles',      icon: '✦' },
+  { id: 1, label: 'Informations', icon: '-' },
+  { id: 2, label: 'Mesures',      icon: '-' },
+  { id: 3, label: 'Modèles',      icon: '-' },
 ]
 
 const MESURES = [
-  'epaule','taille','poitrine','hanches','manches',
-  'cou','cuisse','bras','pantalon','biceps','fesses'
+  'epaule', 'taille', 'poitrine', 'hanche', 'manche',
+  'cou', 'cuisse', 'bras', 'pantalon', 'biceps', 'fesse'
 ]
 
 const emptyForm = {
   firstname: '', lastname: '', phone: '', price: '',
+  is_paid: false, livre: false,
   mesures: Object.fromEntries(MESURES.map(k => [k, ''])),
   model_image: null, tissus_image: null,
 }
@@ -47,12 +48,15 @@ export default function ClientForm() {
           lastname:  c.lastname  || '',
           phone:     c.phone     || '',
           price:     c.price     || '',
+          is_paid:   c.is_paid ?? false,
+          livre:     c.livre ?? false,
           mesures:   { ...Object.fromEntries(MESURES.map(k => [k, ''])), ...(c.mesures || {}) },
           model_image: null,
           tissus_image: null,
         })
-        if (c.model_image)  setPreviews(p => ({ ...p, model_image: c.model_image }))
-        if (c.tissus_image) setPreviews(p => ({ ...p, tissus_image: c.tissus_image }))
+        const base = new URL(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').origin
+        if (c.model_image)  setPreviews(p => ({ ...p, model_image: c.model_image.startsWith('http') ? c.model_image : `${base}/storage/${c.model_image}` }))
+        if (c.tissus_image) setPreviews(p => ({ ...p, tissus_image: c.tissus_image.startsWith('http') ? c.tissus_image : `${base}/storage/${c.tissus_image}` }))
       })
       .catch(console.error)
       .finally(() => setFetchLoading(false))
@@ -91,7 +95,17 @@ export default function ClientForm() {
   async function handleSubmit() {
     setLoading(true)
     try {
-      const payload = { ...form, mesures: JSON.stringify(form.mesures) }
+      const payload = {
+        firstname: form.firstname,
+        lastname: form.lastname,
+        phone: form.phone,
+        price: form.price || undefined,
+        is_paid: form.is_paid,
+        livre: form.livre,
+        mesures: form.mesures,
+        model_image: form.model_image,
+        tissus_image: form.tissus_image,
+      }
       if (isEdit) {
         await updateClient(id, payload)
       } else {
@@ -170,6 +184,18 @@ export default function ClientForm() {
               <input className="input font-mono" type="number" value={form.price}
                 onChange={e => setField('price', e.target.value)} placeholder="15000" />
             </div>
+            {isEdit && (
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.is_paid} onChange={e => setField('is_paid', e.target.checked)} className="rounded" />
+                  <span className="text-sm">Payé</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.livre} onChange={e => setField('livre', e.target.checked)} className="rounded" />
+                  <span className="text-sm">Livré</span>
+                </label>
+              </div>
+            )}
           </div>
         )}
 

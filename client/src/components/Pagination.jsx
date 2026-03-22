@@ -14,7 +14,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         ← Préc.
       </button>
 
-      <span className="text-xs text-dark-400">
+      <span className="text-xs text-[var(--color-text-muted)]">
         Page {currentPage} / {totalPages}
       </span>
 

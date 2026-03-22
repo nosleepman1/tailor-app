@@ -18,17 +18,21 @@ export default function AdminDashboard() {
   const { data: users, loading: loadingUsers } = useUsers()
   const { data: clients, loading: loadingClients } = useClients()
 
-  const activeUsers   = users.filter(u => u.is_active).length
-  const inactiveUsers = users.filter(u => !u.is_active).length
-  const admins        = users.filter(u => u.role === 'admin').length
-  const tailors       = users.filter(u => u.role === 'client').length
+  const activeUsers   = users?.filter(u => u.is_active).length ?? 0
+  const inactiveUsers = users?.filter(u => !u.is_active).length ?? 0
+  const admins        = users?.filter(u => u.role === 'admin').length ?? 0
+  const tailorsCount  = users?.filter(u => u.role === 'client').length ?? 0
 
-  // Clients grouped by tailor (user_id)
-  const clientsByTailor = users
-    .filter(u => u.role === 'client')
-    .map(u => ({ name: `${u.firstname} ${u.lastname}`, count: clients.filter(c => c.user_id === u.id).length }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6)
+  const tailors = users.filter(u => u.role === 'client')
+  const hasUserIds = clients.some(c => c.user_id != null)
+  const clientsByTailor = hasUserIds
+    ? tailors
+        .map(u => ({ name: `${u.firstname} ${u.lastname}`, count: clients.filter(c => c.user_id === u.id).length }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6)
+    : tailors.length > 0
+      ? [{ name: 'Total (tous tailleurs)', count: clients.length }]
+      : []
 
   const barData = {
     labels: clientsByTailor.map(t => t.name),
@@ -77,7 +81,7 @@ export default function AdminDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <StatCard label="Utilisateurs" value={users.length}   icon="◎" color="primary" />
-            <StatCard label="Tailleurs"    value={tailors}         icon="◈" color="gold"    />
+            <StatCard label="Tailleurs"    value={tailorsCount}    icon="◈" color="gold"    />
             <StatCard label="Clients total" value={clients.length} icon="✦" color="green"   />
             <StatCard label="Comptes inactifs" value={inactiveUsers} icon="⊘" color="red"   />
           </div>

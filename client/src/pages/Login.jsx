@@ -17,7 +17,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-950 bg-mesh-pattern flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[var(--color-bg)] bg-mesh-pattern flex items-center justify-center px-4">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary-600/5 rounded-full blur-3xl" />
@@ -30,10 +30,10 @@ export default function Login() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-600/30 to-primary-800/30 border border-primary-500/30 flex items-center justify-center">
             <span className="text-2xl">✦</span>
           </div>
-          <h1 className="font-display text-3xl font-bold text-white">
+          <h1 className="font-display text-3xl font-bold text-[var(--color-text)]">
             Tailleur<span className="text-gold-400">Pro</span>
           </h1>
-          <p className="text-sm text-dark-400 mt-1">Connectez-vous à votre espace</p>
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">Connectez-vous à votre espace</p>
         </div>
 
         {/* Card */}
@@ -95,7 +95,7 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-dark-500 mt-6">
+        <p className="text-center text-xs text-[var(--color-text-subtle)] mt-6">
           © {new Date().getFullYear()} TailleurPro
         </p>
       </div>

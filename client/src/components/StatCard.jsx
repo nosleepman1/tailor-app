@@ -10,8 +10,8 @@ export default function StatCard({ label, value, icon, trend, color = 'primary' 
     <div className={`card p-4 bg-gradient-to-br ${colors[color]} animate-fade-in`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs text-dark-400 uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-bold mt-1 text-white font-mono">{value ?? '—'}</p>
+          <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-wide">{label}</p>
+          <p className="text-2xl font-bold mt-1 text-[var(--color-text)] font-mono">{value ?? '—'}</p>
           {trend !== undefined && (
             <p className={`text-xs mt-1 ${trend >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}%
