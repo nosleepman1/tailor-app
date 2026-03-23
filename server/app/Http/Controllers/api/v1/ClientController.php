@@ -25,6 +25,12 @@ class ClientController extends Controller
     public function store(StoreClientRequest $request)
     {
         $data = $request->validated();
+        if (isset($data['full_name']) && empty($data['firstname'])) {
+            $parts = explode(' ', $data['full_name'], 2);
+            $data['firstname'] = $parts[0] ?? '';
+            $data['lastname'] = $parts[1] ?? '';
+        }
+        
         if ($request->hasFile('model_image')) {
             $data['model_image'] = $request->file('model_image')->store('clients', 'public');
         }
@@ -32,19 +38,33 @@ class ClientController extends Controller
             $data['tissus_image'] = $request->file('tissus_image')->store('clients', 'public');
         }
 
+        $measurements = $data['measurements'] ?? null;
+        unset($data['measurements']);
+
         $client = Client::create($data);
+
+        if ($measurements) {
+            $client->measurement()->create($measurements);
+        }
 
         return new ClientResource($client);
     }
 
     public function show(Client $client)
     {
+        $client->load('measurement');
         return new ClientResource($client);
     }
 
     public function update(StoreClientRequest $request, Client $client)
     {
         $data = $request->validated();
+        if (isset($data['full_name']) && empty($data['firstname'])) {
+            $parts = explode(' ', $data['full_name'], 2);
+            $data['firstname'] = $parts[0] ?? '';
+            $data['lastname'] = $parts[1] ?? '';
+        }
+
         if ($request->hasFile('model_image')) {
             $data['model_image'] = $request->file('model_image')->store('clients', 'public');
         }
@@ -52,7 +72,14 @@ class ClientController extends Controller
             $data['tissus_image'] = $request->file('tissus_image')->store('clients', 'public');
         }
 
+        $measurements = $data['measurements'] ?? null;
+        unset($data['measurements']);
+
         $client->update($data);
+
+        if ($measurements) {
+            $client->measurement()->updateOrCreate(['client_id' => $client->id], $measurements);
+        }
 
         return new ClientResource($client);
     }

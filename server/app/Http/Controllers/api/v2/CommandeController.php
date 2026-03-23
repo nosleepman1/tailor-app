@@ -31,6 +31,7 @@ class CommandeController extends Controller
             'new_client' => 'nullable|array',
             'new_client.full_name' => 'required_with:new_client|string|max:255',
             'new_client.phone' => 'nullable|string|max:255',
+            'new_client.measurements' => 'nullable|array',
             'event_id' => 'nullable|exists:events,id',
             'fabric_description' => 'nullable|string',
             'model_photo' => 'nullable|string',
@@ -38,6 +39,7 @@ class CommandeController extends Controller
             'price' => 'nullable|numeric',
             'deposit_paid' => 'nullable|numeric',
             'due_date' => 'nullable|date',
+            'due_date_remaining' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
 
@@ -53,14 +55,47 @@ class CommandeController extends Controller
                 'full_name' => $validated['new_client']['full_name'],
                 'phone' => $validated['new_client']['phone'] ?? null,
             ]);
+            
+            if (!empty($validated['new_client']['measurements'])) {
+                $client->measurement()->create($validated['new_client']['measurements']);
+            }
+            
             $clientId = $client->id;
         }
 
-        $commandeData = collect($validated)->except(['new_client'])->toArray();
+        $commandeData = collect($validated)->except(['new_client', 'images'])->toArray();
         $commandeData['client_id'] = $clientId;
         $commandeData['tailor_id'] = $request->user()->id;
 
+        $uploadedImages = [];
+        if ($request->hasFile('images')) {
+            $files = $request->file('images');
+            if (isset($files['model'])) {
+                $uploadedImages['model'] = $files['model']->store('commandes', 'public');
+            }
+            if (isset($files['fabric'])) {
+                $uploadedImages['fabric'] = $files['fabric']->store('commandes', 'public');
+            }
+        }
+        
+        if (!empty($uploadedImages)) {
+            $commandeData['images'] = $uploadedImages;
+        }
+
         $commande = Commande::create($commandeData);
+
+        if ($commande->deposit_paid > 0) {
+            \App\Models\Revenue::create([
+                'user_id' => $request->user()->id,
+                'commande_id' => $commande->id,
+                'client_id' => $clientId,
+                'amount' => $commande->deposit_paid,
+                'payment_date' => now(),
+                'type' => 'advance',
+                'status' => 'completed',
+            ]);
+        }
+
         return response()->json($commande->load(['client', 'event']), 201);
     }
 
@@ -83,10 +118,42 @@ class CommandeController extends Controller
             'price' => 'nullable|numeric',
             'deposit_paid' => 'nullable|numeric',
             'due_date' => 'nullable|date',
+            'due_date_remaining' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
 
-        $commande->update($validated);
+        $oldDeposit = collect($commande)->get('deposit_paid');
+        $updateData = $validated;
+        
+        $uploadedImages = $commande->images ?? [];
+        if ($request->hasFile('images')) {
+            $files = $request->file('images');
+            if (isset($files['model'])) {
+                $uploadedImages['model'] = $files['model']->store('commandes', 'public');
+            }
+            if (isset($files['fabric'])) {
+                $uploadedImages['fabric'] = $files['fabric']->store('commandes', 'public');
+            }
+        }
+        
+        if (!empty($uploadedImages)) {
+            $updateData['images'] = $uploadedImages;
+        }
+
+        $commande->update($updateData);
+
+        if (array_key_exists('deposit_paid', $validated) && $validated['deposit_paid'] > $oldDeposit) {
+            \App\Models\Revenue::create([
+                'user_id' => $request->user()->id,
+                'commande_id' => $commande->id,
+                'client_id' => $commande->client_id,
+                'amount' => $validated['deposit_paid'] - $oldDeposit,
+                'payment_date' => now(),
+                'type' => $commande->price && $validated['deposit_paid'] >= $commande->price ? 'final' : 'advance',
+                'status' => 'completed',
+            ]);
+        }
+
         return response()->json($commande->load(['client', 'event']));
     }
 

@@ -29,4 +29,9 @@ class Client extends Model
     {
         return $this->hasMany(Commande::class, 'client_id');
     }
+
+    public function measurement()
+    {
+        return $this->hasOne(Measurement::class, 'client_id');
+    }
 }
