@@ -6,12 +6,13 @@ const AuthContext = createContext({});
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check if user is already authenticated
+    
     const checkAuth = async () => {
       try {
         const authenticated = await isAuthenticated();
@@ -34,7 +35,6 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const data = await apiLogin(credentials);
       setUser(data.user);
-      // Store token in localStorage or cookies (handled by Sanctum)
       return data;
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');

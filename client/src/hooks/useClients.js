@@ -12,7 +12,8 @@ export function useClients() {
     setError(null)
     try {
       const res = await clientService.getClients()
-      setData(res.data || res)
+      const raw = res?.data ?? res
+      setData(Array.isArray(raw) ? raw : raw?.data ?? [])
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors du chargement')
     } finally {
@@ -30,7 +31,7 @@ export function useClients() {
       return tempClient
     }
     const res = await clientService.createClient(payload)
-    const newClient = res.data || res
+    const newClient = res?.data ?? res
     setData(prev => [newClient, ...prev])
     return newClient
   }
@@ -42,8 +43,20 @@ export function useClients() {
       return
     }
     const res = await clientService.updateClient(id, payload)
-    const updated = res.data || res
+    const updated = res?.data ?? res
     setData(prev => prev.map(c => c.id === id ? updated : c))
+    return updated
+  }
+
+  async function updateClientStatus(id, payload) {
+    if (!navigator.onLine) {
+      setData(prev => prev.map(c => c.id === id ? { ...c, ...payload } : c))
+      return
+    }
+    const res = await clientService.updateClientStatus(id, payload)
+    const raw = res?.data ?? res
+    const updated = raw?.data ?? raw
+    setData(prev => prev.map(c => c.id === id ? (updated || { ...c, ...payload }) : c))
     return updated
   }
 
@@ -57,5 +70,5 @@ export function useClients() {
     setData(prev => prev.filter(c => c.id !== id))
   }
 
-  return { data, loading, error, refetch: fetchClients, createClient, updateClient, deleteClient }
+  return { data, loading, error, refetch: fetchClients, createClient, updateClient, updateClientStatus, deleteClient }
 }
