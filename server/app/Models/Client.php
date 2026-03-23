@@ -11,18 +11,22 @@ class Client extends Model
     /** @use HasFactory<ClientFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'firstname', 'lastname', 'phone', 'price', 'is_paid', 'livre', 'manche',
-        'epaule', 'poitrine', 'taille', 'hanche', 'cou',
-        'pantalon', 'fesse', 'cuisse', 'biceps', 'bras',
-        'model_image', 'tissus_image',
-    ];
+    protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'is_paid' => 'boolean',
-            'livre' => 'boolean',
+            'measurements' => 'array',
         ];
+    }
+
+    public function tailor()
+    {
+        return $this->belongsTo(User::class, 'tailor_id');
+    }
+
+    public function commandes()
+    {
+        return $this->hasMany(Commande::class, 'client_id');
     }
 }

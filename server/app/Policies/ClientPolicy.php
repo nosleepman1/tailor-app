@@ -14,7 +14,7 @@ class ClientPolicy
      */
     public function viewAny(User $user): bool
     {
-        return Auth::user()->role === "admin";
+        return $user->hasRole('admin') || $user->hasRole('tailor');
     }
 
     /**
@@ -22,7 +22,7 @@ class ClientPolicy
      */
     public function view(User $user, Client $client): bool
     {
-        return Auth::user()->role === "admin";
+        return $user->hasRole('admin') || $user->id === $client->tailor_id;
     }
 
     /**
@@ -30,7 +30,7 @@ class ClientPolicy
      */
     public function create(User $user): bool
     {
-        return Auth::user()->role === "admin";
+        return $user->hasRole('tailor'); // Usually tailors create clients
     }
 
     /**
@@ -38,7 +38,7 @@ class ClientPolicy
      */
     public function update(User $user, Client $client): bool
     {
-        return Auth::user()->role === "admin";
+        return $user->hasRole('admin') || $user->id === $client->tailor_id;
     }
 
     /**
@@ -46,7 +46,7 @@ class ClientPolicy
      */
     public function delete(User $user, Client $client): bool
     {
-        return Auth::user()->role === "admin";
+        return $user->hasRole('admin') || $user->id === $client->tailor_id;
     }
 
     /**
@@ -54,7 +54,7 @@ class ClientPolicy
      */
     public function restore(User $user, Client $client): bool
     {
-        return false;
+        return $user->hasRole('admin');
     }
 
     /**
@@ -62,6 +62,6 @@ class ClientPolicy
      */
     public function forceDelete(User $user, Client $client): bool
     {
-        return false;
+        return $user->hasRole('admin');
     }
 }
