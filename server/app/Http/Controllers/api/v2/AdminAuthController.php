@@ -14,14 +14,14 @@ class AdminAuthController extends Controller
 {
     public function getTailors(Request $request)
     {
-        if (!$request->user() || !$request->user()->hasRole('admin')) {
+        if (!$request->user() || $request->user()->role !== 'admin') {
             abort(403, 'Unauthorized access.');
         }
-        return response()->json(User::role('tailor')->get());
+        return response()->json(User::where('role', 'tailor')->get());
     }
     public function registerTailor(Request $request)
     {
-        if (!$request->user() || !$request->user()->hasRole('admin')) {
+        if (!$request->user() || $request->user()->role !== 'admin') {
             abort(403, 'Unauthorized access.');
         }
 

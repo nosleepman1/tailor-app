@@ -23,11 +23,14 @@ export default defineConfig({
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       },
+      devOptions: {
+        enabled: true,
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\/api\/v1\/.*/i,
+            urlPattern: /^https:\/\/.*\/api\/v2\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',

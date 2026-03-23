@@ -19,6 +19,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 )
 
-// Register PWA service worker
-registerServiceWorker()
-
+// Vite PWA auto-injects the service worker registering logic

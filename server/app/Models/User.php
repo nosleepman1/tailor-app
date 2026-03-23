@@ -59,6 +59,17 @@ class User extends Authenticatable
         ];
     }
 
+    public function hasRole($roles): bool
+    {
+        if (is_array($roles) || is_iterable($roles)) {
+            foreach ($roles as $r) {
+                if ($this->role === $r) return true;
+            }
+            return false;
+        }
+        return $this->role === $roles;
+    }
+
     public function clients()
     {
         return $this->hasMany(Client::class, 'tailor_id');
