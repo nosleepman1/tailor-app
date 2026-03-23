@@ -1,147 +1,120 @@
-import { useEffect, useState } from 'react'
-import { Bar, Doughnut } from 'react-chartjs-2'
-import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement,
-  ArcElement, Tooltip, Legend
-} from 'chart.js'
-import Layout from '@/components/Layout'
-import StatCard from '@/components/StatCard'
-import Loader from '@/components/Loader'
-import { useUsers } from '@/hooks/useUsers'
-import { useClients } from '@/hooks/useClients'
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend)
-
-const chartColors = { bg: '#16163a', grid: '#1e1e3e', text: '#7a7aaa' }
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/store/authStore';
+import api from '@/api/axios';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Users, Scissors, ClipboardList, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
-  const { data: users, loading: loadingUsers } = useUsers()
-  const { data: clients, loading: loadingClients } = useClients()
+    const user = useAuthStore(state => state.user);
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-  const activeUsers   = users?.filter(u => u.is_active).length ?? 0
-  const inactiveUsers = users?.filter(u => !u.is_active).length ?? 0
-  const admins        = users?.filter(u => u.role === 'admin').length ?? 0
-  const tailorsCount  = users?.filter(u => u.role === 'client').length ?? 0
+    useEffect(() => {
+        api.get('/dashboard').then(({ data }) => {
+            setStats(data.stats);
+            setLoading(false);
+        }).catch(err => {
+            console.error("Failed to load admin stats", err);
+            setLoading(false);
+        });
+    }, []);
 
-  const tailors = users.filter(u => u.role === 'client')
-  const hasUserIds = clients.some(c => c.user_id != null)
-  const clientsByTailor = hasUserIds
-    ? tailors
-        .map(u => ({ name: `${u.firstname} ${u.lastname}`, count: clients.filter(c => c.user_id === u.id).length }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 6)
-    : tailors.length > 0
-      ? [{ name: 'Total (tous tailleurs)', count: clients.length }]
-      : []
-
-  const barData = {
-    labels: clientsByTailor.map(t => t.name),
-    datasets: [{
-      label: 'Clients',
-      data: clientsByTailor.map(t => t.count),
-      backgroundColor: 'rgba(99,102,241,0.5)',
-      borderColor: '#6366f1',
-      borderWidth: 1,
-      borderRadius: 6,
-    }]
-  }
-
-  const donutData = {
-    labels: ['Actifs', 'Inactifs'],
-    datasets: [{
-      data: [activeUsers, inactiveUsers],
-      backgroundColor: ['rgba(99,102,241,0.7)', 'rgba(239,68,68,0.4)'],
-      borderColor: ['#6366f1', '#ef4444'],
-      borderWidth: 1,
-    }]
-  }
-
-  const barOptions = {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { backgroundColor: chartColors.bg, titleColor: '#a3a3ff', bodyColor: '#d3d3e8', borderColor: '#3a3a6e', borderWidth: 1 } },
-    scales: {
-      x: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text, font: { size: 10 }, maxRotation: 30 } },
-      y: { grid: { color: chartColors.grid }, ticks: { color: chartColors.text, font: { size: 10 } } },
+    if (loading) {
+        return <div className="animate-pulse space-y-6">
+            <div className="h-10 w-64 bg-dark-200 dark:bg-dark-800 rounded-lg"></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[1,2,3,4].map(i => <div key={i} className="h-32 bg-dark-200 dark:bg-dark-800 rounded-2xl"></div>)}
+            </div>
+        </div>;
     }
-  }
 
-  const donutOptions = {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { labels: { color: chartColors.text, font: { size: 11 } } }, tooltip: { backgroundColor: chartColors.bg, titleColor: '#a3a3ff', bodyColor: '#d3d3e8', borderColor: '#3a3a6e', borderWidth: 1 } },
-  }
+    if (!stats) return null;
 
-  const loading = loadingUsers || loadingClients
+    const chartData = [
+        { name: 'Tailleurs', value: stats.total_tailors },
+        { name: 'Clients (Global)', value: stats.total_clients },
+        { name: 'Commandes En Cours', value: stats.active_orders },
+        { name: 'Événements', value: stats.total_events },
+    ];
 
-  return (
-    <Layout title="Administration ✦">
-      {loading ? (
-        <div className="flex justify-center py-20"><Loader size="lg" label="Chargement..." /></div>
-      ) : (
-        <div className="space-y-6 page-enter">
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Utilisateurs" value={users.length}   icon="◎" color="primary" />
-            <StatCard label="Tailleurs"    value={tailorsCount}    icon="◈" color="gold"    />
-            <StatCard label="Clients total" value={clients.length} icon="✦" color="green"   />
-            <StatCard label="Comptes inactifs" value={inactiveUsers} icon="⊘" color="red"   />
-          </div>
-
-          {/* Charts */}
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 card p-4">
-              <h2 className="text-sm font-medium text-dark-300 mb-4">Clients par tailleur</h2>
-              <div className="h-44">
-                {clientsByTailor.length > 0 ? (
-                  <Bar data={barData} options={barOptions} />
-                ) : (
-                  <div className="h-full flex items-center justify-center text-dark-500 text-sm">Aucune donnée</div>
-                )}
-              </div>
+    return (
+        <div className="space-y-8 animate-page-enter">
+            <div>
+                <h1 className="text-3xl font-display font-bold text-text">
+                    Espace Administrateur, {user?.name}
+                </h1>
+                <p className="text-text-muted mt-1">Vue globale de l'activité du réseau TailleurPro.</p>
             </div>
 
-            <div className="card p-4">
-              <h2 className="text-sm font-medium text-dark-300 mb-4">Statut comptes</h2>
-              <div className="h-44">
-                <Doughnut data={donutData} options={donutOptions} />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard 
+                    title="Tailleurs Inscrits" 
+                    value={stats.total_tailors} 
+                    icon={Scissors} 
+                    color="text-primary-500" 
+                    bg="bg-primary-500/10"
+                />
+                <StatCard 
+                    title="Clients Enregistrés" 
+                    value={stats.total_clients} 
+                    icon={Users} 
+                    color="text-blue-500" 
+                    bg="bg-blue-500/10"
+                />
+                <StatCard 
+                    title="Commandes Globales" 
+                    value={stats.active_orders} 
+                    icon={ClipboardList} 
+                    color="text-orange-500" 
+                    bg="bg-orange-500/10"
+                />
+                <StatCard 
+                    title="Événements Planifiés" 
+                    value={stats.total_events} 
+                    icon={TrendingUp} 
+                    color="text-green-500" 
+                    bg="bg-green-500/10"
+                />
             </div>
-          </div>
 
-          {/* Recent users table */}
-          <div className="card p-4">
-            <h2 className="text-sm font-medium text-dark-300 mb-4">Derniers utilisateurs</h2>
-            <div className="overflow-x-auto -mx-4 px-4">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left border-b border-dark-700/30">
-                    {['Nom', 'Email', 'Rôle', 'Statut'].map(h => (
-                      <th key={h} className="pb-3 text-xs text-dark-500 font-medium pr-4">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-dark-700/20">
-                  {users.slice(0, 5).map(u => (
-                    <tr key={u.id} className="hover:bg-dark-800/30 transition-colors">
-                      <td className="py-3 pr-4 text-dark-200">{u.firstname} {u.lastname}</td>
-                      <td className="py-3 pr-4 text-dark-400 text-xs">{u.email}</td>
-                      <td className="py-3 pr-4">
-                        <span className={u.role === 'admin' ? 'badge badge-gold' : 'badge badge-blue'}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="py-3">
-                        <span className={u.is_active ? 'badge badge-green' : 'badge badge-red'}>
-                          {u.is_active ? 'Actif' : 'Inactif'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Aperçu de l'Activité Réseau</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="h-80 mt-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--color-text-muted)' }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--color-text-muted)' }} />
+                                <Tooltip 
+                                    cursor={{ fill: 'var(--color-dark-50)' }} 
+                                    contentStyle={{ backgroundColor: 'var(--color-bg-elevated)', border: '1px solid var(--color-border)', borderRadius: '12px' }} 
+                                />
+                                <Bar dataKey="value" fill="var(--color-primary-500)" radius={[4, 4, 0, 0]} barSize={40} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
-      )}
-    </Layout>
-  )
+    );
+}
+
+function StatCard({ title, value, icon: Icon, color, bg }) {
+    return (
+        <Card hover>
+            <CardContent className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bg} ${color}`}>
+                    <Icon className="w-6 h-6" />
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-text-muted">{title}</p>
+                    <p className="text-2xl font-bold text-text mt-0.5">{value}</p>
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
