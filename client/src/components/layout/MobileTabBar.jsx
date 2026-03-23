@@ -24,7 +24,10 @@ export function MobileTabBar() {
     const links = isAdmin ? adminLinks : tailorLinks;
 
     return (
-        <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-bg-elevated/90 backdrop-blur-lg border-t border-border z-40 flex items-center justify-around px-2 pb-safe">
+        <nav 
+            className="md:hidden fixed bottom-0 inset-x-0 bg-bg-elevated/90 backdrop-blur-lg border-t border-border z-[100] flex items-center justify-around px-2"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)', height: 'calc(64px + env(safe-area-inset-bottom))' }}
+        >
             {links.map((link) => (
                 <NavLink
                     key={link.to}

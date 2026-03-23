@@ -47,7 +47,7 @@ export default function EventsOrders() {
                         {/* Content */}
                         <div className={`ml-16 md:ml-0 md:w-[calc(50%-3rem)]`}>
                             <Card hover>
-                                <div className="p-4 border-b border-border/50 bg-dark-50/50 dark:bg-dark-900/50 rounded-t-2xl flex items-center justify-between">
+                                <div className="p-4 border-b border-border/50 bg-transparent rounded-t-2xl flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 rounded-lg bg-white dark:bg-dark-800 shadow-sm">
                                             <CalendarDays className="w-5 h-5 text-primary-500" />

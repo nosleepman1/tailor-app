@@ -59,6 +59,17 @@ export default function KanbanBoard() {
 
     const mobileOrders = orders.filter(o => o.status === selectedMobileStatus);
 
+    const getStatusClasses = (statusId, isActive) => {
+        switch (statusId) {
+            case 'pending': return isActive ? 'bg-slate-500 text-white border-slate-500 shadow-sm' : 'border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 bg-transparent';
+            case 'in_progress': return isActive ? 'bg-blue-500 text-white border-blue-500 shadow-sm' : 'border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 bg-transparent';
+            case 'ready': return isActive ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'border border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-transparent';
+            case 'delivered': return isActive ? 'bg-green-500 text-white border-green-500 shadow-sm' : 'border border-green-300 dark:border-green-700 text-green-600 dark:text-green-400 bg-transparent';
+            case 'cancelled': return isActive ? 'bg-red-500 text-white border-red-500 shadow-sm' : 'border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 bg-transparent';
+            default: return '';
+        }
+    };
+
     return (
         <div className="space-y-6 animate-page-enter">
             <div>
@@ -103,14 +114,25 @@ export default function KanbanBoard() {
                                         <Clock className="w-3.5 h-3.5" />
                                         {new Date(order.due_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-bold text-text-subtle mr-2">{order.price?.toLocaleString()} FCFA</p>
-                                        {COLUMNS.findIndex(c => c.id === order.status) < COLUMNS.length - 2 && (
-                                            <Button size="sm" onClick={() => moveOrderToNextStatus(order)} className="rounded-full px-4 h-9 gap-1.5">
-                                                Suivant <ArrowRight className="w-3.5 h-3.5" />
-                                            </Button>
-                                        )}
-                                    </div>
+                                    <div className="font-bold text-text-subtle mr-2">{order.price?.toLocaleString()} FCFA</div>
+                                </div>
+
+                                {/* Status Selector Pills */}
+                                <div className="mt-4 flex overflow-x-auto gap-2 pb-2 -mx-1 px-1 snap-x no-scrollbar shrink-0">
+                                    {COLUMNS.map(col => {
+                                        const isActive = order.status === col.id;
+                                        return (
+                                            <button
+                                                key={col.id}
+                                                onClick={() => updateOrderStatus(order.id, col.id)}
+                                                className={`snap-start shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                                                    getStatusClasses(col.id, isActive)
+                                                }`}
+                                            >
+                                                {col.title}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </Card>
                         ))

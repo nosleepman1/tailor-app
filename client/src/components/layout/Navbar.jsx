@@ -79,7 +79,7 @@ export function Navbar({ onMenuClick }) {
                     </button>
                     
                     {showNotifs && (
-                        <div className="absolute right-0 mt-2 w-80 bg-bg-elevated border border-border shadow-xl rounded-2xl overflow-hidden z-50 animate-slide-up">
+                        <div className="absolute right-[-85px] sm:right-0 mt-2 w-[320px] max-w-[calc(100vw-2rem)] bg-bg-elevated border border-border shadow-xl rounded-2xl overflow-hidden z-50 animate-slide-up sm:origin-top-right">
                             <div className="px-4 py-3 border-b border-border/50 bg-dark-50/50 dark:bg-dark-900/50 flex justify-between items-center">
                                 <h3 className="font-semibold text-text">Notifications</h3>
                                 <span className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-600 px-2 py-0.5 rounded-full">{notifications.length}</span>

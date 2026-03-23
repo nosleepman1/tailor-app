@@ -174,23 +174,23 @@ export default function OrderDetail() {
 
             {/* Modal de Paiement */}
             {showPaymentModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <Card className="w-full max-w-md animate-slide-up shadow-2xl">
-                        <div className="p-4 border-b border-border/50 flex justify-between items-center bg-bg-elevated/50 rounded-t-2xl">
-                            <h3 className="font-bold text-lg text-text">Ajouter un Versement</h3>
+                <div className="fixed inset-0 bg-black/45 backdrop-blur-[6px] z-[150] flex items-center justify-center p-4 transition-opacity duration-200" onClick={() => setShowPaymentModal(false)}>
+                    <Card className="w-full max-w-md animate-modal-in shadow-xl rounded-[20px] bg-bg-elevated border-none" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 pb-2 flex justify-between items-center">
+                            <h3 className="font-bold text-xl text-text">Ajouter un Versement</h3>
                             <button onClick={() => setShowPaymentModal(false)} className="text-text-muted hover:text-text p-2 rounded-full hover:bg-dark-50 dark:hover:bg-dark-800 transition">✕</button>
                         </div>
-                        <CardContent className="p-6">
-                            <form onSubmit={handleAddPayment} className="space-y-4">
+                        <CardContent className="p-6 pt-4">
+                            <form onSubmit={handleAddPayment} className="space-y-6">
                                 <div>
-                                    <label className="text-sm font-semibold text-text-muted mb-1 block">Montant du versement (FCFA)</label>
+                                    <label className="text-sm font-semibold text-text-muted mb-2 block">Montant du versement (FCFA)</label>
                                     <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <DollarSign className="w-5 h-5 text-text-muted" />
                                         </div>
                                         <input 
                                             type="number"
-                                            className="w-full pl-10 pr-4 py-3 bg-bg-elevated border border-border text-text rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-lg font-medium"
+                                            className="w-full pl-12 pr-4 py-3.5 bg-dark-50/50 dark:bg-dark-900/30 border border-border text-text rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 text-lg font-medium"
                                             value={paymentAmount}
                                             onChange={e => setPaymentAmount(e.target.value)}
                                             max={remaining}
@@ -201,12 +201,12 @@ export default function OrderDetail() {
                                     </div>
                                     <p className="text-xs text-text-subtle mt-2">Le montant maximum recommandable est le reste à payer: {remaining.toLocaleString()} FCFA.</p>
                                 </div>
-                                <div className="flex gap-3 pt-4">
-                                    <Button type="button" variant="ghost" className="flex-1" onClick={() => setShowPaymentModal(false)}>
+                                <div className="flex gap-4 pt-4 mt-2">
+                                    <Button type="button" variant="ghost" className="flex-1 py-3" onClick={() => setShowPaymentModal(false)}>
                                         Annuler
                                     </Button>
-                                    <Button type="submit" isLoading={isSubmitting} className="flex-1 bg-gold-500 hover:bg-gold-600 focus:ring-gold-500 text-white">
-                                        Confirmer le paiement
+                                    <Button type="submit" isLoading={isSubmitting} className="flex-1 py-3 bg-gold-500 hover:bg-gold-600 focus:ring-gold-500 text-white rounded-xl shadow-sm">
+                                        Confirmer
                                     </Button>
                                 </div>
                             </form>

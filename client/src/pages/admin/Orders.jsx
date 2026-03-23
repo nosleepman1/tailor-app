@@ -37,7 +37,7 @@ export default function AdminOrders() {
             </div>
 
             <Card>
-                <div className="p-4 border-b border-border bg-dark-50/50 dark:bg-dark-900/50 rounded-t-2xl">
+                <div className="p-4 border-b border-border bg-transparent rounded-t-2xl">
                     <Input 
                         icon={Search} 
                         placeholder="Rechercher par client ou atelier..." 
@@ -50,7 +50,7 @@ export default function AdminOrders() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-border text-xs uppercase text-text-subtle bg-dark-50/50 dark:bg-dark-900/50">
+                            <tr className="border-b border-border text-xs uppercase text-text-subtle bg-transparent">
                                 <th className="px-6 py-4 font-semibold">Atelier</th>
                                 <th className="px-6 py-4 font-semibold">Client</th>
                                 <th className="px-6 py-4 font-semibold">Description</th>

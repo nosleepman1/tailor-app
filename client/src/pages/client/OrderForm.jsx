@@ -63,7 +63,7 @@ export default function OrderForm() {
                 <CardContent className="pt-6">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         
-                        <div className="bg-dark-50/50 dark:bg-dark-900/50 p-4 rounded-xl border border-border/50 space-y-4">
+                        <div className="bg-transparent p-4 rounded-xl border border-border/50 space-y-4">
                             <div className="flex items-center justify-between border-b border-border/50 pb-3">
                                 <h3 className="font-semibold text-text text-sm uppercase tracking-wider">Sélection du Client</h3>
                                 <div className="flex bg-bg-elevated border border-border rounded-lg p-1">
