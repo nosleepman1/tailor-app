@@ -25,7 +25,7 @@ export const Input = forwardRef(({
                 <input
                     ref={ref}
                     className={clsx(
-                        'w-full max-w-full truncate bg-bg-elevated border border-border text-text text-sm rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:opacity-60 disabled:bg-bg-muted',
+                        'w-full box-border min-w-0 max-w-full truncate bg-bg-elevated border border-border text-text text-sm rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:opacity-60 disabled:bg-bg-muted',
                         Icon ? 'pl-9 pr-4 py-2.5' : 'px-4 py-2.5',
                         error && 'border-red-500 focus:border-red-500 focus:ring-red-500/20',
                         className

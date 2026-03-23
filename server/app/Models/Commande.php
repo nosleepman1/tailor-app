@@ -8,6 +8,13 @@ class Commande extends Model
 {
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'images' => 'array',
+        ];
+    }
+
     public function tailor()
     {
         return $this->belongsTo(User::class, 'tailor_id');

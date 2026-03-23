@@ -39,8 +39,15 @@ class ClientController extends Controller
         ]);
 
         $validated['tailor_id'] = $request->user()->id;
+        $measurements = $validated['measurements'] ?? null;
+        unset($validated['measurements']);
 
         $client = Client::create($validated);
+        
+        if ($measurements) {
+            $client->measurement()->create($measurements);
+        }
+        
         return response()->json($client, 201);
     }
 
@@ -64,7 +71,15 @@ class ClientController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $measurements = $validated['measurements'] ?? null;
+        unset($validated['measurements']);
+
         $client->update($validated);
+
+        if ($measurements) {
+            $client->measurement()->updateOrCreate(['client_id' => $client->id], $measurements);
+        }
+
         return response()->json($client);
     }
 
