@@ -1,132 +1,84 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  UsersIcon,
-  UserGroupIcon,
-  HomeIcon,
-  ChartBarIcon,
-  CogIcon,
-  LogoutIcon,
-} from '@heroicons/react/outline';
+import clsx from 'clsx';
+import { useAuthStore } from '@/store/authStore';
+import { LayoutDashboard, Users, Scissors, CalendarDays, X, Shield } from 'lucide-react';
 
-const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: HomeIcon },
-  { name: 'Clients', href: '/admin/clients', icon: UsersIcon },
-  { name: 'Users', href: '/admin/users', icon: UserGroupIcon },
-  { name: 'Reports', href: '/admin/reports', icon: ChartBarIcon },
-  { name: 'Settings', href: '/admin/settings', icon: CogIcon },
-];
+export function Sidebar({ isOpen, onClose }) {
+    const user = useAuthStore(state => state.user);
+    const isAdmin = user?.role === 'admin';
 
-const Sidebar = ({ isOpen, onClose }) => {
-  return (
-    <>
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-white lg:pt-5">
-        {/* Logo */}
-        <div className="flex items-center px-6">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600" />
-          <span className="ml-3 text-xl font-bold text-gray-900">TailorApp</span>
-        </div>
+    const tailorLinks = [
+        { name: 'Tableau de bord', to: '/dashboard', icon: LayoutDashboard },
+        { name: 'Kanban Commandes', to: '/kanban', icon: CalendarDays },
+        { name: 'Mes Clients', to: '/clients', icon: Users },
+        { name: 'Événements & Commandes', to: '/events-orders', icon: Scissors },
+    ];
 
-        {/* Navigation */}
-        <nav className="mt-8 flex-1 space-y-1 px-4">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              end={item.href === '/admin'}
-              className={({ isActive }) =>
-                `group flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                }`
-              }
-            >
-              <item.icon
-                className={`mr-3 h-5 w-5 flex-shrink-0 ${
-                  location.pathname.includes(item.href)
-                    ? 'text-blue-500'
-                    : 'text-gray-400 group-hover:text-gray-500'
-                }`}
-              />
-              {item.name}
-            </NavLink>
-          ))}
-        </nav>
+    const adminLinks = [
+        { name: 'Admin Dashboard', to: '/admin/dashboard', icon: Shield },
+        { name: 'Gestion Tailleurs', to: '/admin/tailors', icon: Scissors },
+        { name: 'Événements', to: '/admin/events', icon: CalendarDays },
+        { name: 'Toutes les Commandes', to: '/admin/orders', icon: LayoutDashboard },
+    ];
 
-        {/* Footer */}
-        <div className="border-t border-gray-200 p-4">
-          <button className="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-            <LogoutIcon className="mr-3 h-5 w-5 text-gray-400" />
-            Logout
-          </button>
-        </div>
-      </div>
+    const links = isAdmin ? adminLinks : tailorLinks;
 
-      {/* Mobile sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white transition-transform duration-300 ease-in-out lg:hidden ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex h-full flex-col">
-          {/* Mobile header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600" />
-              <span className="ml-3 text-xl font-bold text-gray-900">TailorApp</span>
-            </div>
-            <button
-              onClick={onClose}
-              className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
-            >
-              <span className="sr-only">Close sidebar</span>
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+    return (
+        <>
 
-          {/* Mobile navigation */}
-          <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4">
-            {navigation.map((item) => (
-              <NavLink
-                key={item.name}
-                to={item.href}
-                end={item.href === '/admin'}
-                className={({ isActive }) =>
-                  `group flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`
-                }
-                onClick={onClose}
-              >
-                <item.icon
-                  className={`mr-3 h-5 w-5 flex-shrink-0 ${
-                    location.pathname.includes(item.href)
-                      ? 'text-blue-500'
-                      : 'text-gray-400 group-hover:text-gray-500'
-                  }`}
-                />
-                {item.name}
-              </NavLink>
-            ))}
-          </nav>
+            {/* Sidebar container */}
+            <aside className="hidden md:flex sticky top-0 h-screen inset-y-0 left-0 z-50 w-72 bg-bg-elevated border-r border-border transition-transform duration-300 ease-in-out flex-col">
+                <div className="h-16 flex items-center justify-between px-6 border-b border-border">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary-600 text-white flex items-center justify-center font-display font-bold text-lg shadow-sm">
+                            T
+                        </div>
+                        <span className="font-display font-bold text-xl tracking-tight text-text">TailorShop</span>
+                    </div>
+                    <button onClick={onClose} className="lg:hidden p-2 text-text-muted hover:text-text">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-          {/* Mobile footer */}
-          <div className="border-t border-gray-200 p-4">
-            <button className="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-              <LogoutIcon className="mr-3 h-5 w-5 text-gray-400" />
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
+                <div className="p-6 pb-2">
+                    <div className="flex items-center gap-3 bg-dark-50 dark:bg-dark-900/50 p-3 rounded-xl border border-border/50">
+                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold">
+                            {user?.name?.charAt(0)?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-text truncate">{user?.name}</p>
+                            <p className="text-xs text-text-subtle truncate capitalize">{user?.role}</p>
+                        </div>
+                    </div>
+                </div>
 
-export default Sidebar;
+                <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+                    <p className="px-3 text-xs font-semibold text-text-subtle uppercase tracking-wider mb-2 mt-4">Menu Principal</p>
+                    {links.map((link) => (
+                        <NavLink
+                            key={link.to}
+                            to={link.to}
+                            onClick={() => {
+                                if (window.innerWidth < 1024) onClose();
+                            }}
+                            className={({ isActive }) => clsx(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors group",
+                                isActive 
+                                    ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500" 
+                                    : "text-text-muted hover:text-text hover:bg-dark-50 dark:hover:bg-dark-800/50"
+                            )}
+                        >
+                            {({ isActive }) => (
+                                <>
+                                    <link.icon className={clsx("w-5 h-5", isActive ? "text-primary-600 dark:text-primary-500" : "text-text-subtle group-hover:text-text-muted")} />
+                                    {link.name}
+                                </>
+                            )}
+                        </NavLink>
+                    ))}
+                </nav>
+            </aside>
+        </>
+    );
+}
