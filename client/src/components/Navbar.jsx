@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 
 const adminLinks = [
   { to: '/admin/dashboard', label: 'Tableau de bord', icon: '⬡' },
@@ -14,6 +15,7 @@ const clientLinks = [
 
 export default function Navbar() {
   const { user, isAdmin, logout } = useAuth()
+  const { theme, setTheme, isDark } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -32,13 +34,13 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-dark-900/95 backdrop-blur border-r border-dark-700/40 z-30">
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-[var(--color-bg-elevated)]/95 backdrop-blur border-r border-[var(--color-border)] z-30">
         {/* Logo */}
-        <div className="px-6 py-6 border-b border-dark-700/40">
-          <span className="font-display text-xl font-bold text-white tracking-tight">
+        <div className="px-6 py-6 border-b border-[var(--color-border)]">
+          <span className="font-display text-xl font-bold text-[var(--color-text)] tracking-tight">
             Tailleur<span className="text-gold-400">Pro</span>
           </span>
-          <p className="text-xs text-dark-400 mt-0.5">Gestion professionnelle</p>
+          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Gestion professionnelle</p>
         </div>
 
         {/* Links */}
@@ -51,8 +53,8 @@ export default function Navbar() {
                 to={link.to}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   active
-                    ? 'bg-primary-600/20 text-primary-300 border border-primary-500/20'
-                    : 'text-dark-300 hover:text-white hover:bg-dark-700/50'
+                    ? 'bg-primary-600/20 text-primary-600 dark:text-primary-300 border border-primary-500/20'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-muted)]'
                 }`}
               >
                 <span className="text-base opacity-70">{link.icon}</span>
@@ -63,21 +65,30 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* User info */}
-        <div className="px-3 py-4 border-t border-dark-700/40">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-dark-800/60">
-            <div className="w-8 h-8 rounded-lg bg-primary-600/30 border border-primary-500/30 flex items-center justify-center text-xs font-bold text-primary-300">
+        {/* User info + theme toggle */}
+        <div className="px-3 py-4 border-t border-[var(--color-border)] space-y-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              className="flex-1 px-3 py-2 rounded-lg text-xs font-medium bg-[var(--color-bg-muted)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+              title={isDark ? 'Mode clair' : 'Mode sombre'}
+            >
+              {isDark ? '☀️ Clair' : '🌙 Sombre'}
+            </button>
+          </div>
+          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--color-bg-muted)]">
+            <div className="w-8 h-8 rounded-lg bg-primary-600/30 border border-primary-500/30 flex items-center justify-center text-xs font-bold text-primary-600 dark:text-primary-300">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-dark-100 truncate">{user?.firstname} {user?.lastname}</p>
+              <p className="text-xs font-medium text-[var(--color-text)] truncate">{user?.firstname} {user?.lastname}</p>
               <span className={`text-[10px] ${isAdmin ? 'text-gold-400' : 'text-primary-400'}`}>
                 {isAdmin ? 'Admin' : 'Tailleur'}
               </span>
             </div>
             <button
               onClick={handleLogout}
-              className="text-dark-400 hover:text-red-400 transition-colors p-1"
+              className="text-[var(--color-text-muted)] hover:text-red-500 transition-colors p-1"
               title="Déconnexion"
             >
               ⏻
@@ -87,7 +98,7 @@ export default function Navbar() {
       </aside>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-900/95 backdrop-blur border-t border-dark-700/40 z-30 px-2 py-2">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--color-bg-elevated)]/95 backdrop-blur border-t border-[var(--color-border)] z-30 px-2 py-2">
         <div className="flex items-center justify-around">
           {links.map(link => {
             const active = location.pathname === link.to
@@ -96,7 +107,7 @@ export default function Navbar() {
                 key={link.to}
                 to={link.to}
                 className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all ${
-                  active ? 'text-primary-300' : 'text-dark-400'
+                  active ? 'text-primary-600 dark:text-primary-300' : 'text-[var(--color-text-muted)]'
                 }`}
               >
                 <span className="text-lg leading-none">{link.icon}</span>
@@ -105,8 +116,16 @@ export default function Navbar() {
             )
           })}
           <button
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[var(--color-text-muted)] transition-all"
+            title={isDark ? 'Clair' : 'Sombre'}
+          >
+            <span className="text-lg leading-none">{isDark ? '☀️' : '🌙'}</span>
+            <span className="text-[10px]">Thème</span>
+          </button>
+          <button
             onClick={handleLogout}
-            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-dark-400 hover:text-red-400 transition-all"
+            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-[var(--color-text-muted)] hover:text-red-500 transition-all"
           >
             <span className="text-lg leading-none">⏻</span>
             <span className="text-[10px]">Sortir</span>

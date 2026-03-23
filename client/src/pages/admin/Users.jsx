@@ -1,184 +1,158 @@
-import { useState } from 'react'
-import Layout from '@/components/Layout'
-import ConfirmModal from '@/components/ConfirmModal'
-import Loader from '@/components/Loader'
-import { useUsers } from '@/hooks/useUsers'
-
-const emptyUser = { firstname: '', lastname: '', username: '', email: '', password: '', role: 'client', is_active: true }
+import { useState, useEffect } from 'react';
+import api from '@/api/axios';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Scissors, Search, Plus, Phone, Check, Activity } from 'lucide-react';
 
 export default function AdminUsers() {
-  const { data: users, loading, createUser, updateUser, deleteUser, toggleActive } = useUsers()
-  const [search, setSearch] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [editUser, setEditUser] = useState(null)
-  const [form, setForm] = useState(emptyUser)
-  const [toDelete, setToDelete] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const [errors, setErrors] = useState({})
+    const [tailors, setTailors] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+    const [showForm, setShowForm] = useState(false);
+    
+    // Create Tailor Form State
+    const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', pin: '' });
+    const [creating, setCreating] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
-  const filtered = users.filter(u => {
-    const q = search.toLowerCase()
-    return u.firstname?.toLowerCase().includes(q) || u.lastname?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)
-  })
+    useEffect(() => {
+        fetchTailors();
+    }, []);
 
-  function openCreate() { setForm(emptyUser); setEditUser(null); setErrors({}); setShowForm(true) }
-  function openEdit(u)  { setForm({ ...u, password: '' }); setEditUser(u); setErrors({}); setShowForm(true) }
-  function closeForm()  { setShowForm(false); setEditUser(null) }
-
-  async function handleSave() {
-    setSaving(true)
-    setErrors({})
-    try {
-      if (editUser) {
-        const payload = { ...form }
-        if (!payload.password) delete payload.password
-        await updateUser(editUser.id, payload)
-      } else {
-        await createUser(form)
-      }
-      closeForm()
-    } catch (err) {
-      setErrors(err.response?.data?.errors || { general: 'Une erreur est survenue' })
-    } finally {
-      setSaving(false)
+    async function fetchTailors() {
+        setLoading(true);
+        try {
+            const { data } = await api.get('/admin/tailors');
+            setTailors(data);
+        } catch (error) {
+            console.error('Failed to load tailors', error);
+        } finally {
+            setLoading(false);
+        }
     }
-  }
 
-  return (
-    <Layout
-      title="Utilisateurs"
-      action={<button onClick={openCreate} className="btn-primary text-sm py-2 px-4">+ Ajouter</button>}
-    >
-      <div className="space-y-4 page-enter">
-        {/* Search */}
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400 text-sm">⌕</span>
-          <input type="text" className="input pl-9" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
+    async function handleCreate(e) {
+        e.preventDefault();
+        setCreating(true);
+        setSuccessMessage('');
+        try {
+            await api.post('/admin/tailors', form);
+            setSuccessMessage(`Tailleur ${form.name} créé avec succès !`);
+            setShowForm(false);
+            setForm({ name: '', phone: '', email: '', city: '', pin: '' });
+            fetchTailors();
+        } catch (error) {
+            console.error('Failed to create tailor', error);
+        } finally {
+            setCreating(false);
+        }
+    }
 
-        {/* Count */}
-        <p className="text-xs text-dark-500">{filtered.length} utilisateur{filtered.length !== 1 ? 's' : ''}</p>
+    const filtered = tailors.filter(t => 
+        t.name.toLowerCase().includes(search.toLowerCase()) || 
+        (t.phone && t.phone.includes(search))
+    );
 
-        {/* List */}
-        {loading ? (
-          <div className="flex justify-center py-16"><Loader size="lg" /></div>
-        ) : (
-          <div className="space-y-2">
-            {filtered.map(u => (
-              <div key={u.id} className="card p-4 flex items-center gap-3 group">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dark-700 to-dark-800 border border-dark-600/50 flex items-center justify-center text-sm font-bold text-dark-300 shrink-0">
-                  {(u.firstname?.[0] || '') + (u.lastname?.[0] || '')}
+    return (
+        <div className="space-y-6 animate-page-enter">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-display font-bold text-text">Gestion des Tailleurs</h1>
+                    <p className="text-text-muted mt-1">Gérez le réseau d'ateliers professionnels</p>
                 </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-medium text-dark-100">{u.firstname} {u.lastname}</p>
-                    <span className={u.role === 'admin' ? 'badge badge-gold' : 'badge badge-blue'}>{u.role}</span>
-                    <span className={u.is_active ? 'badge badge-green' : 'badge badge-red'}>
-                      {u.is_active ? 'Actif' : 'Inactif'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-dark-400">{u.email}</p>
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => toggleActive(u.id, !u.is_active)}
-                    className={`p-1.5 rounded-lg text-xs transition-colors ${u.is_active ? 'text-emerald-400 hover:bg-emerald-600/10' : 'text-red-400 hover:bg-red-600/10'}`}
-                    title={u.is_active ? 'Désactiver' : 'Activer'}
-                  >
-                    {u.is_active ? '⏸' : '▶'}
-                  </button>
-                  <button
-                    onClick={() => openEdit(u)}
-                    className="p-1.5 rounded-lg text-dark-400 hover:text-primary-300 hover:bg-primary-600/10 text-xs transition-colors"
-                  >✎</button>
-                  <button
-                    onClick={() => setToDelete(u.id)}
-                    className="p-1.5 rounded-lg text-dark-400 hover:text-red-400 hover:bg-red-600/10 text-xs transition-colors"
-                  >✕</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* User Form Drawer */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-dark-950/70 backdrop-blur-sm animate-fade-in">
-          <div className="card w-full max-w-md p-6 animate-slide-up max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-lg font-semibold text-white">
-                {editUser ? 'Modifier utilisateur' : 'Nouvel utilisateur'}
-              </h2>
-              <button onClick={closeForm} className="text-dark-400 hover:text-white p-1">✕</button>
+                <Button onClick={() => setShowForm(!showForm)} className="w-full sm:w-auto gap-2 border border-primary-500/20 shadow-sm">
+                    <Plus className="w-4 h-4" /> Ajouter un Tailleur
+                </Button>
             </div>
 
-            {errors.general && (
-              <div className="mb-4 bg-red-900/20 border border-red-700/30 text-red-300 text-sm px-3 py-2 rounded-lg">{errors.general}</div>
+            {successMessage && (
+                <div className="p-4 bg-green-500/10 border border-green-500/20 text-green-600 rounded-xl flex items-center gap-2 font-medium">
+                    <Check className="w-5 h-5" />
+                    {successMessage}
+                </div>
             )}
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Prénom</label>
-                  <input className="input" value={form.firstname} onChange={e => setForm(f => ({ ...f, firstname: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Nom</label>
-                  <input className="input" value={form.lastname} onChange={e => setForm(f => ({ ...f, lastname: e.target.value }))} />
-                </div>
-              </div>
-              <div>
-                <label className="label">Nom d'utilisateur</label>
-                <input className="input" value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} />
-              </div>
-              <div>
-                <label className="label">Email</label>
-                <input type="email" className="input" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-                {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email[0]}</p>}
-              </div>
-              <div>
-                <label className="label">Mot de passe {editUser && '(laisser vide pour ne pas changer)'}</label>
-                <input type="password" className="input" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Rôle</label>
-                  <select className="input" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
-                    <option value="client">Tailleur</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Statut</label>
-                  <select className="input" value={form.is_active ? '1' : '0'} onChange={e => setForm(f => ({ ...f, is_active: e.target.value === '1' }))}>
-                    <option value="1">Actif</option>
-                    <option value="0">Inactif</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            {showForm && (
+                <Card className="animate-slide-up bg-primary-50/30 dark:bg-primary-900/10 border-primary-500/30">
+                    <CardContent className="pt-6">
+                        <form onSubmit={handleCreate} className="space-y-5">
+                            <h3 className="font-semibold text-lg text-text border-b border-border/50 pb-2">Nouvel Atelier</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <Input label="Nom de l'atelier / Tailleur" required value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                                <Input label="Téléphone (Identifiant)" icon={Phone} required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+                                <Input label="Email (Optionnel)" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+                                <Input label="Ville" value={form.city} onChange={e => setForm({...form, city: e.target.value})} />
+                                <div className="md:col-span-2">
+                                    <Input label="Code PIN Initial (6 chiffres recommandés)" type="password" required value={form.pin} onChange={e => setForm({...form, pin: e.target.value})} />
+                                    <p className="text-xs text-text-subtle mt-1 flex items-center gap-1"><Activity className="w-3 h-3"/> Le tailleur utilisera son numéro de téléphone et ce PIN pour se connecter.</p>
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-3 pt-2">
+                                <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Annuler</Button>
+                                <Button type="submit" isLoading={creating}>Enregistrer le Tailleur</Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            )}
 
-            <div className="flex gap-3 mt-6">
-              <button onClick={closeForm} className="btn-ghost flex-1">Annuler</button>
-              <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                {saving ? <><span className="w-4 h-4 border border-white/30 border-t-white rounded-full animate-spin" />Enregistrement...</> : '✓ Enregistrer'}
-              </button>
-            </div>
-          </div>
+            <Card>
+                <div className="p-4 border-b border-border bg-dark-50/50 dark:bg-dark-900/50 rounded-t-2xl">
+                    <Input 
+                        icon={Search} 
+                        placeholder="Rechercher par nom ou téléphone..." 
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="max-w-md bg-bg-elevated"
+                    />
+                </div>
+                
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-border text-xs uppercase text-text-subtle bg-dark-50/50 dark:bg-dark-900/50">
+                                <th className="px-6 py-4 font-semibold">Atelier</th>
+                                <th className="px-6 py-4 font-semibold">Contact</th>
+                                <th className="px-6 py-4 font-semibold">Localisation</th>
+                                <th className="px-6 py-4 font-semibold text-right">Date d'inscription</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-8 text-center text-text-muted">Chargement...</td>
+                                </tr>
+                            ) : filtered.length === 0 ? (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-8 text-center text-text-muted">Aucun tailleur trouvé.</td>
+                                </tr>
+                            ) : (
+                                filtered.map(tailor => (
+                                    <tr key={tailor.id} className="hover:bg-dark-50 dark:hover:bg-dark-800/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-gold-500/10 text-gold-600 flex items-center justify-center">
+                                                    <Scissors className="w-5 h-5" />
+                                                </div>
+                                                <div className="font-semibold text-text">{tailor.name}</div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-text-muted">
+                                            <div>{tailor.phone || 'Non renseigné'}</div>
+                                            <div className="text-xs mt-0.5">{tailor.email}</div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-text-muted">{tailor.city || '-'}</td>
+                                        <td className="px-6 py-4 text-sm text-right text-text-muted font-medium">
+                                            {new Date(tailor.created_at).toLocaleDateString('fr-FR')}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
         </div>
-      )}
-
-      <ConfirmModal
-        open={!!toDelete}
-        title="Supprimer cet utilisateur ?"
-        message="Cette action supprimera également tous ses clients associés."
-        onConfirm={async () => { await deleteUser(toDelete); setToDelete(null) }}
-        onCancel={() => setToDelete(null)}
-        danger
-      />
-    </Layout>
-  )
+    );
 }

@@ -1,122 +1,111 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import Layout from '@/components/Layout'
-import ClientCard from '@/components/ClientCard'
-import ClientDetail from '@/components/ClientDetail'
-import ConfirmModal from '@/components/ConfirmModal'
-import EmptyState from '@/components/EmptyState'
-import Pagination from '@/components/Pagination'
-import { SkeletonList } from '@/components/SkeletonCard'
-import { useClients } from '@/hooks/useClients'
-import { useDebounce } from '@/hooks/useDebounce'
-import { useToast } from '@/contexts/ToastContext'
+import { useState, useEffect } from 'react';
+import api from '@/api/axios';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Search, Plus, Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const PER_PAGE = 10
+export default function Clients() {
+    const [clients, setClients] = useState([]);
+    const [search, setSearch] = useState('');
+    const [loading, setLoading] = useState(true);
 
-export default function ClientClients() {
-  const { data: clients, loading, error, deleteClient } = useClients()
-  const toast = useToast()
+    useEffect(() => {
+        api.get('/clients').then(({ data }) => {
+            setClients(data);
+            setLoading(false);
+        });
+    }, []);
 
-  const [search, setSearch]     = useState('')
-  const [toDelete, setToDelete] = useState(null)
-  const [detailId, setDetailId] = useState(null)
-  const [page, setPage]         = useState(1)
+    const filtered = clients.filter(c => 
+        c.full_name.toLowerCase().includes(search.toLowerCase()) ||
+        (c.phone && c.phone.includes(search))
+    );
 
-  const debouncedSearch = useDebounce(search, 250)
-
-  const filtered = clients.filter(c => {
-    const q = debouncedSearch.toLowerCase()
     return (
-      c.firstname?.toLowerCase().includes(q) ||
-      c.lastname?.toLowerCase().includes(q) ||
-      c.phone?.includes(q)
-    )
-  })
-
-  const totalPages = Math.ceil(filtered.length / PER_PAGE)
-  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE)
-
-  function handleSearch(val) { setSearch(val); setPage(1) }
-
-  async function handleDelete() {
-    if (!toDelete) return
-    try {
-      await deleteClient(toDelete)
-      toast.success('Client supprimé avec succès')
-    } catch {
-      toast.error('Erreur lors de la suppression')
-    } finally {
-      setToDelete(null)
-    }
-  }
-
-  return (
-    <Layout
-      title="Mes clients"
-      action={
-        <Link to="/clients/new" className="btn-primary text-sm py-2 px-4">+ Ajouter</Link>
-      }
-    >
-      <div className="space-y-4 page-enter">
-        {/* Search */}
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400 text-sm">⌕</span>
-          <input
-            type="text"
-            className="input pl-9"
-            placeholder="Rechercher par nom, téléphone..."
-            value={search}
-            onChange={e => handleSearch(e.target.value)}
-          />
-          {search && (
-            <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white text-xs">✕</button>
-          )}
-        </div>
-
-        {!loading && (
-          <p className="text-xs text-dark-500">
-            {filtered.length} client{filtered.length !== 1 ? 's' : ''}
-            {debouncedSearch ? ` pour "${debouncedSearch}"` : ''}
-          </p>
-        )}
-
-        {loading ? (
-          <SkeletonList count={5} />
-        ) : error ? (
-          <div className="card p-6 text-center text-red-400 text-sm">{error}</div>
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon="◈"
-            title={debouncedSearch ? 'Aucun résultat' : 'Aucun client ajouté'}
-            description={debouncedSearch ? `Aucun client ne correspond à "${debouncedSearch}"` : 'Commencez par ajouter votre premier client'}
-            action={!debouncedSearch && (
-              <Link to="/clients/new" className="btn-primary text-sm">Ajouter un client</Link>
-            )}
-          />
-        ) : (
-          <>
-            <div className="space-y-3">
-              {paginated.map(client => (
-                <div key={client.id} onClick={() => setDetailId(client.id)} className="cursor-pointer">
-                  <ClientCard client={client} onDelete={id => setToDelete(id)} />
+        <div className="space-y-6 animate-page-enter">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-display font-bold text-text">Mes Clients</h1>
+                    <p className="text-text-muted mt-1">Gérez votre base de clientèle</p>
                 </div>
-              ))}
+                <Link to="/clients/new">
+                    <Button className="w-full sm:w-auto gap-2">
+                        <Plus className="w-4 h-4" /> Nouveau Client
+                    </Button>
+                </Link>
             </div>
-            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-          </>
-        )}
-      </div>
 
-      <ClientDetail clientId={detailId} onClose={() => setDetailId(null)} onDelete={id => setToDelete(id)} />
-
-      <ConfirmModal
-        open={!!toDelete}
-        title="Supprimer ce client ?"
-        message="Cette action est irréversible. Toutes les mesures associées seront perdues."
-        onConfirm={handleDelete}
-        onCancel={() => setToDelete(null)}
-        danger
-      />
-    </Layout>
-  )
+            <Card>
+                <div className="p-4 border-b border-border bg-dark-50/50 dark:bg-dark-900/50 rounded-t-2xl">
+                    <Input 
+                        icon={Search} 
+                        placeholder="Rechercher par nom ou téléphone..." 
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="max-w-md bg-bg-elevated"
+                    />
+                </div>
+                
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-border text-xs uppercase text-text-subtle bg-dark-50/50 dark:bg-dark-900/50">
+                                <th className="px-6 py-4 font-semibold">Nom</th>
+                                <th className="px-6 py-4 font-semibold">Téléphone</th>
+                                <th className="px-6 py-4 font-semibold">Commandes Actives</th>
+                                <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-8 text-center text-text-muted">
+                                        Chargement...
+                                    </td>
+                                </tr>
+                            ) : filtered.length === 0 ? (
+                                <tr>
+                                    <td colSpan="4" className="px-6 py-8 text-center text-text-muted">
+                                        Aucun client trouvé.
+                                    </td>
+                                </tr>
+                            ) : (
+                                filtered.map(client => (
+                                    <tr key={client.id} className="hover:bg-dark-50 dark:hover:bg-dark-800/50 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold">
+                                                    {client.full_name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <span className="font-medium text-text">{client.full_name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-text-muted flex items-center gap-2">
+                                            {client.phone ? (
+                                                <><Phone className="w-4 h-4" /> {client.phone}</>
+                                            ) : '-'}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {client.active_orders_count > 0 ? (
+                                                <span className="badge badge-gold">{client.active_orders_count} en cours</span>
+                                            ) : (
+                                                <span className="text-text-subtle text-sm">Aucune</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <Link to={`/clients/${client.id}/edit`}>
+                                                <Button variant="ghost" size="sm">Gérer</Button>
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+        </div>
+    );
 }

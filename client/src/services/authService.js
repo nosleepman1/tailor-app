@@ -7,7 +7,11 @@ const authService = {
   },
 
   async logout() {
-    try { await api.post('/logout') } catch (_) {}
+    try {
+      await api.post('/logout')
+    } catch (_) {
+      /* ignore */
+    }
     localStorage.removeItem('token')
     localStorage.removeItem('user')
   },
