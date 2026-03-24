@@ -28,11 +28,11 @@ services:
       - "8000:80"
     command: >
       sh -c "
+      composer install &&
       php artisan key:generate &&
       php artisan migrate --force &&
       php artisan db:seed --force &&
-      php-fpm -D &&
-      nginx -g 'daemon off;'
+      supervisord -c /etc/supervisor/conf.d/supervisord.conf
       "
 
   # Base de données SQLite (utilise un volume pour persistance)
@@ -51,6 +51,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      target: development
     container_name: tailor-frontend
     restart: unless-stopped
     working_dir: /app
