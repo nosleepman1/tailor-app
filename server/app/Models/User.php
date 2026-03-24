@@ -34,6 +34,7 @@ class User extends Authenticatable
         'profile_photo',
         'city',
         'active',
+        'is_subscribed',
     ];
 
     /**
@@ -78,5 +79,15 @@ class User extends Authenticatable
     public function commandes()
     {
         return $this->hasMany(Commande::class, 'tailor_id');
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->subscriptions()->active()->latest()->first();
     }
 }

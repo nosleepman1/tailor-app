@@ -19,6 +19,8 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->boolean('is_recurring')->default(false);
             $table->timestamps();
+
+            $table->index('date');
         });
     }
 
