@@ -13,22 +13,18 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->string('firstname');
-            $table->string('lastname');
-            $table->float('price')->nullable();
+            $table->foreignId('tailor_id')->constrained('users')->onDelete('cascade');
+            $table->string('full_name');
             $table->string('phone')->nullable();
-            $table->integer('epaule')->nullable();
-            $table->integer('poitrine')->nullable();
-            $table->integer('taille')->nullable();
-            $table->integer('hanche')->nullable();
-            $table->integer('cou')->nullable();
-            $table->integer('pantalon')->nullable();
-            $table->integer('fesse')->nullable();
-            $table->integer('cuisse')->nullable();
-            $table->integer('biceps')->nullable();
-            $table->integer('bras')->nullable();
-            $table->string('image')->nullable();
+            $table->string('email')->nullable();
+            $table->string('address')->nullable();
+            $table->string('photo')->nullable();
+            $table->json('measurements')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
+
+            $table->index('tailor_id');
+            $table->index('created_at');
         });
     }
 
