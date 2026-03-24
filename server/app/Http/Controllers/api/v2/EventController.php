@@ -21,7 +21,7 @@ class EventController extends Controller
             } else {
                 $q->with('client', 'tailor');
             }
-        }])->orderBy('date', 'asc')->get();
+        }])->orderBy('date', 'asc')->paginate($request->input('per_page', 20));
 
         return response()->json($events);
     }

@@ -18,10 +18,12 @@ class ClientController extends Controller
         if ($request->user()->hasRole('tailor')) {
             $query->where('tailor_id', $request->user()->id);
         }
-        
-        return response()->json($query->withCount(['commandes as active_orders_count' => function($q) {
-            $q->whereIn('status', ['pending', 'in_progress', 'ready']);
-        }])->latest()->get());
+
+        return response()->json(
+                $query->withCount(['commandes as active_orders_count' => function($q) {
+                    $q->whereIn('status', ['pending', 'in_progress', 'ready']);
+                }
+            ])->latest()->paginate($request->input('per_page', 20)));
     }
 
     public function store(Request $request)
@@ -43,11 +45,11 @@ class ClientController extends Controller
         unset($validated['measurements']);
 
         $client = Client::create($validated);
-        
+
         if ($measurements) {
             $client->measurement()->create($measurements);
         }
-        
+
         return response()->json($client, 201);
     }
 

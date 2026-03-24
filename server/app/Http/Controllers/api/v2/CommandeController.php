@@ -19,7 +19,7 @@ class CommandeController extends Controller
             $query->where('tailor_id', $request->user()->id);
         }
         
-        return response()->json($query->latest()->get());
+        return response()->json($query->latest()->paginate($request->input('per_page', 20)));
     }
 
     public function store(Request $request)

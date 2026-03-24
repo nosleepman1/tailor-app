@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Client;
 use App\Models\Commande;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
@@ -24,35 +25,52 @@ class DashboardController extends Controller
                 'active_tailors' => User::whereHas('roles', fn($q) => $q->where('name', 'tailor'))->withCount('commandes')->orderByDesc('commandes_count')->take(5)->get(),
             ];
             return response()->json(['role' => 'admin', 'stats' => $stats]);
-        } 
-        
+        }
+
         // Tailor View
         $activeOrdersQuery = Commande::where('tailor_id', $user->id)
             ->whereIn('status', ['pending', 'in_progress', 'ready']);
 
         $stats = [
+
+
             'total_clients' => Client::where('tailor_id', $user->id)->count(),
             'active_orders' => $activeOrdersQuery->count(),
             'orders_due_this_week' => (clone $activeOrdersQuery)
                 ->whereNotNull('due_date')
                 ->whereBetween('due_date', [now()->startOfWeek(), now()->endOfWeek()])
                 ->count(),
+
+
+
             'total_revenue' => Commande::where('tailor_id', $user->id)
                 ->where('status', 'delivered')
                 ->sum('price'),
+
+
+
             'revenue_month' => Commande::where('tailor_id', $user->id)
                 ->where('status', 'delivered')
                 ->whereMonth('updated_at', now()->month)
                 ->whereYear('updated_at', now()->year)
                 ->sum('price'),
+
+
+
             'revenue_year' => Commande::where('tailor_id', $user->id)
                 ->where('status', 'delivered')
                 ->whereYear('updated_at', now()->year)
                 ->sum('price'),
+
+
+
             'total_debt' => Commande::where('tailor_id', $user->id)
                 ->where('status', '!=', 'cancelled')
                 ->whereRaw('price > deposit_paid')
                 ->sum(\Illuminate\Support\Facades\DB::raw('price - deposit_paid')),
+
+
+
             'debtors' => Commande::with('client')
                 ->where('tailor_id', $user->id)
                 ->where('status', '!=', 'cancelled')
@@ -65,6 +83,9 @@ class DashboardController extends Controller
                     'amount_owed' => $c->amount_owed,
                     'next_due' => $c->next_due,
                 ]),
+
+
+
             'revenue_by_event' => Commande::with('event')
                 ->where('tailor_id', $user->id)
                 ->where('status', 'delivered')
@@ -75,6 +96,9 @@ class DashboardController extends Controller
                     'event' => $c->event ? $c->event->name : 'Général',
                     'total_revenue' => $c->total
                 ]),
+
+
+
             'upcoming_deadlines' => Commande::with('client')
                 ->where('tailor_id', $user->id)
                 ->whereIn('status', ['pending', 'in_progress', 'ready'])
