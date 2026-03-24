@@ -29,6 +29,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      target: development
     container_name: tailor-frontend
     restart: unless-stopped
     working_dir: /app
