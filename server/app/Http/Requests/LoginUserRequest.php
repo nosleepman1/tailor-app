@@ -12,7 +12,7 @@ class LoginUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,16 @@ class LoginUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'email' => 'nullable|string',
+            'username' => 'nullable|string',
+            'password' => 'required|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'password.required' => 'Le mot de passe est requis',
         ];
     }
 }

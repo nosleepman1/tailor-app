@@ -1,0 +1,45 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('commandes', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tailor_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
+            $table->foreignId('event_id')->nullable()->constrained('events')->onDelete('set null');
+            $table->text('fabric_description')->nullable();
+            $table->string('model_photo')->nullable();
+            $table->json('images')->nullable();
+            $table->enum('status', ['pending', 'in_progress', 'ready', 'delivered', 'cancelled'])->default('pending');
+            $table->decimal('price', 10, 2)->nullable();
+            $table->decimal('deposit_paid', 10, 2)->default(0);
+            $table->date('due_date')->nullable();
+            $table->date('due_date_remaining')->nullable();
+            $table->text('notes')->nullable();
+            $table->timestamps();
+
+            $table->index(['status', 'created_at']);
+            $table->index('due_date');
+            $table->index(['tailor_id', 'status']);
+            $table->index('client_id');
+            $table->index('event_id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('commandes');
+    }
+};

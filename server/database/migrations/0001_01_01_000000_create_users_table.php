@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class extends Migration 
 {
     /**
      * Run the migrations.
@@ -13,14 +13,16 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('firstname');
-            $table->string('lastname');
-            $table->string('username')->unique();
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('name');
+            $table->string('email')->nullable()->unique();
+            $table->string('phone')->unique();
             $table->string('password');
-            $table->enum('role', ['admin', 'client'])->default('client');
-            $table->boolean('is_active')->default(true);
+            $table->string('pin')->nullable();
+            $table->enum('role', ['admin', 'tailor'])->default('tailor');
+            $table->string('profile_photo')->nullable();
+            $table->string('city')->nullable();
+            $table->boolean('active')->default(true);
+            $table->boolean('is_subscribed')->default(false);
             $table->rememberToken();
             $table->timestamps();
         });
@@ -38,6 +40,31 @@ return new class extends Migration
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
+        });
+
+        Schema::create('subscriptions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->enum('plan', ['basic', 'premium']);
+            $table->integer('amount');
+            $table->enum('status', ['pending', 'active', 'expired', 'cancelled'])->default('pending');
+            $table->string('dexpay_reference')->unique();
+            $table->string('dexpay_customer_id')->nullable();
+            $table->json('dexpay_session_data')->nullable();
+            $table->timestamp('starts_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('payment_logs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('subscription_id')->nullable()->constrained('subscriptions')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('dexpay_reference')->nullable();
+            $table->string('event_type');
+            $table->json('payload')->nullable();
+            $table->string('status')->nullable();
+            $table->timestamps();
         });
     }
 
