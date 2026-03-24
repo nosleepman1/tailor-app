@@ -34,26 +34,56 @@ use App\Http\Controllers\Api\V2\CommandeController as V2CommandeController;
 use App\Http\Controllers\Api\V2\DashboardController;
 
 Route::prefix('v2')->group(function () {
+  
+  
+  
     // Public Auth
     Route::post('/tailor/register', [TailorAuthController::class, 'register']);
     Route::post('/tailor/login', [TailorAuthController::class, 'login']);
     Route::post('/admin/login', [TailorAuthController::class, 'login']);
+    
+ 
+ 
+    // Public Webhook (DexPay)
+    Route::post('/webhooks/dexpay', [\App\Http\Controllers\Api\SubscriptionController::class, 'webhook']);
+    
+    
     
     // Protected Routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [TailorAuthController::class, 'logout']);
         Route::get('/me', fn (Request $request) => $request->user());
 
-        // Admin Only
-        Route::prefix('admin')->group(function () {
-            Route::get('tailors', [AdminAuthController::class, 'getTailors']);
-            Route::post('tailors', [AdminAuthController::class, 'registerTailor']);
+        // Subscription routes bypass the check.subscription middleware
+        Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+            Route::get('/success-redirect', function (Request $request) {
+                return redirect(env('APP_FRONTEND_URL', 'http://localhost:5173') . '/subscription/success?ref=' . $request->ref);
+            });
+            Route::get('/failure-redirect', function (Request $request) {
+                return redirect(env('APP_FRONTEND_URL', 'http://localhost:5173') . '/subscription/failure?ref=' . $request->ref);
+            });
+            Route::get('/plans', [\App\Http\Controllers\Api\SubscriptionController::class, 'plans'])->name('plans');
+            Route::post('/checkout', [\App\Http\Controllers\Api\SubscriptionController::class, 'checkout'])->name('checkout');
+            Route::get('/verify', [\App\Http\Controllers\Api\SubscriptionController::class, 'verify'])->name('verify');
+            Route::get('/current', [\App\Http\Controllers\Api\SubscriptionController::class, 'current'])->name('current');
         });
-        
-        // Tailor Only / Shared -> Scoped later in policies
-        Route::apiResource('clients', V2ClientController::class);
-        Route::apiResource('events', V2EventController::class);
-        Route::apiResource('commandes', V2CommandeController::class);
-        Route::get('dashboard', [DashboardController::class, 'index']);
+
+
+
+        Route::middleware('check.subscription')->group(function () {
+            // Admin Only
+            Route::prefix('admin')->group(function () {
+                Route::get('tailors', [AdminAuthController::class, 'getTailors']);
+                Route::post('tailors', [AdminAuthController::class, 'registerTailor']);
+            });
+            
+
+
+            // Tailor Only / Shared -> Scoped later in policies
+            Route::apiResource('clients', V2ClientController::class);
+            Route::apiResource('events', V2EventController::class);
+            Route::apiResource('commandes', V2CommandeController::class);
+            Route::get('dashboard', [DashboardController::class, 'index']);
+        });
     });
 });
