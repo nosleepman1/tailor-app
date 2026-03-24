@@ -42,7 +42,7 @@ function RoleRedirect() {
 
 export default function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Suspense fallback={<Loader fullscreen />}>
         <Routes>
           {/* Public */}
