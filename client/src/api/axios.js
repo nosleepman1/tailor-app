@@ -24,7 +24,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        if (
+            error.response?.status === 403 &&
+            error.response?.data?.code === 'SUBSCRIPTION_REQUIRED'
+        ) {
+            window.location.href = '/subscription?expired=true'
+        } else if (error.response?.status === 401) {
             localStorage.removeItem('auth_token')
             localStorage.removeItem('user')
             window.location.href = '/login'
