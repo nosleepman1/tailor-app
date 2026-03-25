@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\api\v1\ClientController;
 use App\Http\Controllers\api\v1\UserController;
+use App\Http\Controllers\Api\V1\SettingsController;
+use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +36,8 @@ use App\Http\Controllers\Api\V2\CommandeController as V2CommandeController;
 use App\Http\Controllers\Api\V2\DashboardController;
 
 Route::prefix('v2')->group(function () {
+    // Push Public
+    Route::get('/push/vapid-public-key', [PushSubscriptionController::class, 'vapidPublicKey']);
   
   
   
@@ -50,11 +54,22 @@ Route::prefix('v2')->group(function () {
     
     
     // Protected Routes
-    Route::middleware('auth:sanctum')->group(function () {
+        Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [TailorAuthController::class, 'logout']);
         Route::get('/me', fn (Request $request) => $request->user());
 
+        // Settings & Profile
+        Route::get('/user/profile', [SettingsController::class, 'getProfile']);
+        Route::put('/user/profile', [SettingsController::class, 'updateProfile']);
+        Route::put('/user/password', [SettingsController::class, 'updatePassword']);
+        Route::get('/user/preferences', [SettingsController::class, 'getPreferences']);
+        Route::put('/user/preferences', [SettingsController::class, 'updatePreferences']);
+
+        Route::post('/push/subscribe', [PushSubscriptionController::class, 'subscribe']);
+        Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'unsubscribe']);
+
         // Subscription routes bypass the check.subscription middleware
+        
         Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
             Route::get('/success-redirect', function (Request $request) {
                 return redirect(env('APP_FRONTEND_URL', 'http://localhost:5173') . '/subscription/success?ref=' . $request->ref);
