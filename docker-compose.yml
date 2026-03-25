@@ -15,21 +15,23 @@ services:
       - APP_KEY=
       - DB_CONNECTION=sqlite
       - DB_DATABASE=/var/www/database/database.sqlite
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=redis
     ports:
-      - "8000:80"
+      - "8000:8000"
     command: >
-      sh -c "cp .env.example .env 2>/dev/null || true &&
-             composer install --no-interaction 2>/dev/null || true &&
+      sh -c "[ ! -f .env ] && cp .env.example .env || true &&
              php artisan key:generate 2>/dev/null || true &&
-             php artisan migrate --force &&
+             php artisan migrate --force || true &&
              php artisan storage:link 2>/dev/null || true &&
-             /usr/bin/supervisord -c /etc/supervisord.conf"
+             php artisan serve --host=0.0.0.0 --port=8000"
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-      target: development
     container_name: tailor-frontend
     restart: unless-stopped
     working_dir: /app
@@ -43,5 +45,15 @@ services:
     depends_on:
       - backend
 
+  redis:
+    image: redis:alpine
+    container_name: tailor-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
 volumes:
   backend-db:
+  redis-data:
