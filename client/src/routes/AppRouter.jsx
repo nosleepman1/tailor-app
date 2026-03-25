@@ -20,6 +20,10 @@ const EventsOrders     = lazy(() => import('@/pages/client/EventsOrders'))
 const OrderForm        = lazy(() => import('@/pages/client/OrderForm'))
 const OrderDetail      = lazy(() => import('@/pages/client/OrderDetail'))
 const KanbanBoard      = lazy(() => import('@/pages/client/KanbanBoard'))
+const SettingsPage     = lazy(() => import('@/pages/SettingsPage'))
+const ProfileSettingsPage     = lazy(() => import('@/pages/settings/ProfileSettingsPage'))
+const SubscriptionSettingsPage     = lazy(() => import('@/pages/settings/SubscriptionSettingsPage'))
+const NotificationSettingsPage     = lazy(() => import('@/pages/settings/NotificationSettingsPage'))
 
 // DexPay Subscription Pages
 const SubscriptionPage        = lazy(() => import('@/pages/SubscriptionPage'))
@@ -70,6 +74,10 @@ export default function AppRouter() {
               <Route path="/orders/new" element={<OrderForm />} />
               <Route path="/orders/:id" element={<OrderDetail />} />
               <Route path="/kanban" element={<KanbanBoard />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/profile" element={<ProfileSettingsPage />} />
+              <Route path="/settings/subscription" element={<SubscriptionSettingsPage />} />
+              <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
             </Route>
 
             {/* Fallback */}

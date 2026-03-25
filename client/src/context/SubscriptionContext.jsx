@@ -8,13 +8,8 @@ export function SubscriptionProvider({ children }) {
     const { isActive, subscription, loading, refetch } = useSubscriptionHook();
     const location = useLocation();
 
-    // Silently re-check subscription on route change
-    useEffect(() => {
-        if (!loading) {
-            refetch();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.pathname]);
+    // Subscription is fetched once on mount via useSubscription hook.
+    // Relies on webhook and explicit refresh for updates to avoid spamming the API.
 
     return (
         <SubscriptionContext.Provider value={{ isActive, subscription, loading, refreshSubscription: refetch }}>

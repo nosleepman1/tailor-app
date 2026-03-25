@@ -19,4 +19,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 )
 
-// Vite PWA auto-injects the service worker registering logic
+// If PWA plugin isn't auto-registering, fallback to manual registration
+if (typeof registerServiceWorker === 'function') {
+  registerServiceWorker();
+} else if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}

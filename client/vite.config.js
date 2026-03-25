@@ -23,22 +23,15 @@ export default defineConfig({
           { src: 'logo.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       },
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
+      injectManifest: {
+        injectionPoint: null, // Ignore precaching warnings for now, focus on push
+      },
       devOptions: {
         enabled: true,
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\/api\/v2\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
-              networkTimeoutSeconds: 10,
-            },
-          },
-        ],
+        type: 'module',
       },
     }),
   ],
