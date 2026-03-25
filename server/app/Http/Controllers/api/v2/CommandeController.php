@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 use App\Models\Commande;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Cache;
 
 class CommandeController extends Controller
 {
@@ -14,12 +15,23 @@ class CommandeController extends Controller
     {
         Gate::authorize('viewAny', Commande::class);
 
+        $user = $request->user();
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 20);
+
         $query = Commande::with(['client', 'event']);
-        if ($request->user()->hasRole('tailor')) {
-            $query->where('tailor_id', $request->user()->id);
+        
+        if ($user->hasRole('tailor')) {
+            $query->where('tailor_id', $user->id);
+            $cacheKey = "commandes_page_{$page}_{$perPage}";
+            
+            $result = Cache::tags(['tailor_' . $user->id])->remember($cacheKey, 1800, function () use ($query, $perPage) {
+                return $query->latest()->paginate($perPage);
+            });
+            return response()->json($result);
         }
         
-        return response()->json($query->latest()->get());
+        return response()->json($query->latest()->paginate($perPage));
     }
 
     public function store(Request $request)

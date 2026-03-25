@@ -11,18 +11,19 @@ export default function AdminOrders() {
     const [search, setSearch] = useState('');
 
     useEffect(() => {
-        // Technically backend doesn't have an admin-only orders endpoint yet, but usually admins can see all.
-        // Assuming /commandes for admin returns all if Policy allows.
+
         api.get('/commandes').then(({ data }) => {
-            // For now, if no tailor-specific logic, let's just render what we get.
-            setOrders(data);
+            setOrders(data.data || data);
             setLoading(false);
         }).catch(() => {
             setLoading(false);
-        });
+        }).finally(() => {
+            console.log(orders);
+
+        })
     }, []);
 
-    const filtered = orders.filter(o => 
+    const filtered = orders?.filter(o =>
         (o.client?.full_name?.toLowerCase().includes(search.toLowerCase())) ||
         (o.tailor?.name?.toLowerCase().includes(search.toLowerCase()))
     );
@@ -38,15 +39,15 @@ export default function AdminOrders() {
 
             <Card>
                 <div className="p-4 border-b border-border bg-transparent rounded-t-2xl">
-                    <Input 
-                        icon={Search} 
-                        placeholder="Rechercher par client ou atelier..." 
+                    <Input
+                        icon={Search}
+                        placeholder="Rechercher par client ou atelier..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         className="max-w-md bg-bg-elevated"
                     />
                 </div>
-                
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>

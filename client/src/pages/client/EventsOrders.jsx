@@ -13,7 +13,7 @@ export default function EventsOrders() {
 
     useEffect(() => {
         api.get('/events').then(({ data }) => {
-            setEvents(data);
+            setEvents(data.data || data);
             setLoading(false);
         });
     }, []);

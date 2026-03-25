@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 use App\Models\Client;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Cache;
 
 class ClientController extends Controller
 {
@@ -14,14 +15,30 @@ class ClientController extends Controller
     {
         Gate::authorize('viewAny', Client::class);
 
+        $user = $request->user();
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 20);
+
         $query = Client::query();
-        if ($request->user()->hasRole('tailor')) {
-            $query->where('tailor_id', $request->user()->id);
+
+        if ($user->hasRole('tailor')) {
+            $query->where('tailor_id', $user->id);
+            
+            $cacheKey = "clients_page_{$page}_{$perPage}";
+            
+            $result = Cache::tags(['tailor_' . $user->id])->remember($cacheKey, 1800, function () use ($query, $perPage) {
+                return $query->withCount(['commandes as active_orders_count' => function($q) {
+                        $q->whereIn('status', ['pending', 'in_progress', 'ready']);
+                    }])->latest()->paginate($perPage);
+            });
+            return response()->json($result);
         }
-        
-        return response()->json($query->withCount(['commandes as active_orders_count' => function($q) {
-            $q->whereIn('status', ['pending', 'in_progress', 'ready']);
-        }])->latest()->get());
+
+        return response()->json(
+                $query->withCount(['commandes as active_orders_count' => function($q) {
+                    $q->whereIn('status', ['pending', 'in_progress', 'ready']);
+                }
+            ])->latest()->paginate($perPage));
     }
 
     public function store(Request $request)
@@ -43,11 +60,11 @@ class ClientController extends Controller
         unset($validated['measurements']);
 
         $client = Client::create($validated);
-        
+
         if ($measurements) {
             $client->measurement()->create($measurements);
         }
-        
+
         return response()->json($client, 201);
     }
 

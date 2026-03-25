@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 use App\Models\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Cache;
 
 class EventController extends Controller
 {
@@ -14,14 +15,23 @@ class EventController extends Controller
     {
         Gate::authorize('viewAny', Event::class);
 
-        // Load events with their commandes scoped by the tailor (or all for admin).
-        $events = Event::with(['commandes' => function($q) use ($request) {
-            if ($request->user()->hasRole('tailor')) {
-                $q->where('tailor_id', $request->user()->id)->with('client');
-            } else {
-                $q->with('client', 'tailor');
-            }
-        }])->orderBy('date', 'asc')->get();
+        $user = $request->user();
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 20);
+        $isTailor = $user->hasRole('tailor');
+
+        $cacheKey = $isTailor ? "events_tailor_page_{$page}_{$perPage}" : "events_admin_page_{$page}_{$perPage}";
+        $tags = $isTailor ? ['tailor_' . $user->id, 'events'] : ['events'];
+
+        $events = Cache::tags($tags)->remember($cacheKey, 3600, function () use ($request, $perPage, $isTailor, $user) {
+            return Event::with(['commandes' => function($q) use ($isTailor, $user) {
+                if ($isTailor) {
+                    $q->where('tailor_id', $user->id)->with('client');
+                } else {
+                    $q->with('client', 'tailor');
+                }
+            }])->orderBy('date', 'asc')->paginate($perPage);
+        });
 
         return response()->json($events);
     }

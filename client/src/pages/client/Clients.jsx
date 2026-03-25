@@ -13,7 +13,8 @@ export default function Clients() {
 
     useEffect(() => {
         api.get('/clients').then(({ data }) => {
-            setClients(data);
+            setClients(data.data);
+            
             setLoading(false);
         });
     }, []);

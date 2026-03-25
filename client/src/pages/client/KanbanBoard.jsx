@@ -26,7 +26,7 @@ export default function KanbanBoard() {
 
     useEffect(() => {
         api.get('/commandes').then(res => {
-            setOrders(res.data);
+            setOrders(res.data.data);
             setLoading(false);
         }).catch(() => setLoading(false));
     }, []);

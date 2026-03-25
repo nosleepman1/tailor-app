@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import Loader from '@/components/Loader'
 import { AppLayout } from '@/components/layout/AppLayout'
+import SubscriptionGuard from '@/components/SubscriptionGuard'
+import { SubscriptionProvider } from '@/context/SubscriptionContext'
 
 // Lazy pages
 const Login            = lazy(() => import('@/pages/Login'))
@@ -19,16 +21,10 @@ const OrderForm        = lazy(() => import('@/pages/client/OrderForm'))
 const OrderDetail      = lazy(() => import('@/pages/client/OrderDetail'))
 const KanbanBoard      = lazy(() => import('@/pages/client/KanbanBoard'))
 
-function ProtectedRoute({ children, adminOnly = false }) {
-  const user = useAuthStore(state => state.user)
-  const token = useAuthStore(state => state.token)
-  const isAuthenticated = !!token && !!user
-  const isAdmin = user?.role === 'admin'
-
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (adminOnly && !isAdmin) return <Navigate to="/dashboard" replace />
-  return children
-}
+// DexPay Subscription Pages
+const SubscriptionPage        = lazy(() => import('@/pages/SubscriptionPage'))
+const SubscriptionSuccessPage = lazy(() => import('@/pages/SubscriptionSuccessPage'))
+const SubscriptionFailurePage = lazy(() => import('@/pages/SubscriptionFailurePage'))
 
 function RoleRedirect() {
   const user = useAuthStore(state => state.user)
@@ -42,38 +38,45 @@ function RoleRedirect() {
 
 export default function AppRouter() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<Loader fullscreen />}>
-        <Routes>
-          {/* Public */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<RoleRedirect />} />
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <SubscriptionProvider>
+        <Suspense fallback={<Loader fullscreen />}>
+          <Routes>
+            {/* Public */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<RoleRedirect />} />
 
-          {/* Protected Area (AppLayout wraps the Sidebar/Navbar) */}
-          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-            {/* Admin routes */}
-            <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/tailors" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
-            <Route path="/admin/events" element={<ProtectedRoute adminOnly><AdminEvents /></ProtectedRoute>} />
-            <Route path="/admin/orders" element={<ProtectedRoute adminOnly><AdminOrders /></ProtectedRoute>} />
+            {/* Subscription Routes */}
+            <Route path="/subscription" element={<SubscriptionPage />} />
+            <Route path="/subscription/success" element={<SubscriptionSuccessPage />} />
+            <Route path="/subscription/failure" element={<SubscriptionFailurePage />} />
 
-            {/* Client (tailleur) routes */}
-            <Route path="/dashboard" element={<ClientDashboard />} />
-            <Route path="/clients" element={<ClientClients />} />
-            <Route path="/clients/new" element={<ClientForm />} />
-            <Route path="/clients/:id/edit" element={<ClientForm />} />
-            
-            <Route path="/events-orders" element={<EventsOrders />} />
-            <Route path="/orders/new" element={<OrderForm />} />
-            <Route path="/orders/:id" element={<OrderDetail />} />
-            <Route path="/kanban" element={<KanbanBoard />} />
-          </Route>
+            {/* Protected Area (AppLayout wraps the Sidebar/Navbar) */}
+            <Route element={<SubscriptionGuard><AppLayout /></SubscriptionGuard>}>
+              {/* Admin routes */}
+              <Route path="/admin/dashboard" element={<SubscriptionGuard adminOnly><AdminDashboard /></SubscriptionGuard>} />
+              <Route path="/admin/tailors" element={<SubscriptionGuard adminOnly><AdminUsers /></SubscriptionGuard>} />
+              <Route path="/admin/events" element={<SubscriptionGuard adminOnly><AdminEvents /></SubscriptionGuard>} />
+              <Route path="/admin/orders" element={<SubscriptionGuard adminOnly><AdminOrders /></SubscriptionGuard>} />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+              {/* Client (tailleur) routes */}
+              <Route path="/dashboard" element={<ClientDashboard />} />
+              <Route path="/clients" element={<ClientClients />} />
+              <Route path="/clients/new" element={<ClientForm />} />
+              <Route path="/clients/:id/edit" element={<ClientForm />} />
+              
+              <Route path="/events-orders" element={<EventsOrders />} />
+              <Route path="/orders/new" element={<OrderForm />} />
+              <Route path="/orders/:id" element={<OrderDetail />} />
+              <Route path="/kanban" element={<KanbanBoard />} />
+            </Route>
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </SubscriptionProvider>
     </BrowserRouter>
   )
 }

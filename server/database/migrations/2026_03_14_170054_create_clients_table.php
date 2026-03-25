@@ -22,6 +22,9 @@ return new class extends Migration
             $table->json('measurements')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
+
+            $table->index('tailor_id');
+            $table->index('created_at');
         });
     }
 
