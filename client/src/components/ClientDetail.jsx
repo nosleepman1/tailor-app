@@ -33,12 +33,12 @@ export default function ClientDetail({ clientId, onClose, onDelete }) {
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in"
+        className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[6px] transition-opacity duration-200"
         onClick={onClose}
       />
 
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm bg-[var(--color-bg-elevated)] border-l border-[var(--color-border)] shadow-2xl flex flex-col animate-slide-up overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)] shrink-0">
+      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-sm bg-bg-elevated shadow-2xl flex flex-col animate-slide-up overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50 dark:border-white/5 shrink-0">
           <h2 className="font-display text-base font-semibold text-[var(--color-text)]">Fiche client</h2>
           <button
             onClick={onClose}

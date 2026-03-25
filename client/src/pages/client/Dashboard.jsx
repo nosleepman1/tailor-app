@@ -3,7 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/api/axios';
 import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Users, ClipboardList, TrendingUp, Clock, AlertCircle } from 'lucide-react';
+import { Users, ClipboardList, TrendingUp, Clock, AlertCircle, Phone, MessageCircle, DollarSign, CalendarCheck } from 'lucide-react';
 
 export default function Dashboard() {
     const user = useAuthStore(state => state.user);
@@ -28,8 +28,8 @@ export default function Dashboard() {
         return (
             <div className="space-y-6 animate-pulse">
                 <div className="h-10 w-48 bg-dark-200 dark:bg-dark-800 rounded-lg"></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-dark-200 dark:bg-dark-800 rounded-2xl"></div>)}
+                <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mt-4">
+                    {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-24 bg-dark-200 dark:bg-dark-800 rounded-xl"></div>)}
                 </div>
             </div>
         );
@@ -43,10 +43,11 @@ export default function Dashboard() {
                 <h1 className="text-3xl font-display font-bold text-text">
                     Bonjour, {user?.name}
                 </h1>
-                <p className="text-text-muted mt-1">Voici un aperçu de votre atelier aujourd'hui.</p>
+                <p className="text-text-muted mt-1">Aperçu financier et opérationnel de votre atelier.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Compact KPI Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 <StatCard 
                     title="Total Clients" 
                     value={stats.total_clients} 
@@ -55,60 +56,136 @@ export default function Dashboard() {
                     bg="bg-blue-500/10"
                 />
                 <StatCard 
-                    title="Commandes Actives" 
+                    title="Commandes" 
                     value={stats.active_orders} 
                     icon={ClipboardList} 
                     color="text-orange-500" 
                     bg="bg-orange-500/10"
                 />
                 <StatCard 
-                    title="Revenus du Mois" 
-                    value={`${stats.revenue_month?.toLocaleString('fr-FR')} FCFA`} 
-                    icon={TrendingUp} 
+                    title="Dues Semaine" 
+                    value={stats.orders_due_this_week || 0} 
+                    icon={CalendarCheck} 
+                    color="text-red-500" 
+                    bg="bg-red-500/10"
+                />
+                <StatCard 
+                    title="Revenu Total" 
+                    value={`${(stats.total_revenue || 0).toLocaleString('fr-FR')} F`} 
+                    icon={DollarSign} 
                     color="text-green-500" 
                     bg="bg-green-500/10"
                 />
                 <StatCard 
-                    title="Prochaines Échéances" 
-                    value={stats.upcoming_deadlines?.length || 0} 
-                    icon={Clock} 
-                    color="text-purple-500" 
-                    bg="bg-purple-500/10"
+                    title="Revenus Mois" 
+                    value={`${(stats.revenue_month || 0).toLocaleString('fr-FR')} F`} 
+                    icon={TrendingUp} 
+                    color="text-teal-500" 
+                    bg="bg-teal-500/10"
+                />
+                <StatCard 
+                    title="Restes à Payer" 
+                    value={`${(stats.total_debt || 0).toLocaleString('fr-FR')} F`} 
+                    icon={AlertCircle} 
+                    color="text-rose-500" 
+                    bg="bg-rose-500/10"
                 />
             </div>
 
-            <div className="mt-8">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-display font-bold text-text">Récents & À Venir</h2>
-                    <a href="/events-orders" className="text-sm font-semibold text-primary-600 hover:text-primary-500">Tout voir →</a>
-                </div>
-                
-                {stats.upcoming_deadlines?.length > 0 ? (
-                    <div className="flex overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0 gap-4 snap-x">
-                        {stats.upcoming_deadlines.map(order => (
-                            <Card key={order.id} className="min-w-[280px] max-w-[320px] shrink-0 snap-center hover:scale-[1.02] transition-transform">
-                                <CardContent className="p-4">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center">
-                                            <AlertCircle className="w-5 h-5" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Upcoming Deadlines */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-display font-bold text-text">Prochaines Échéances</h2>
+                        <a href="/events-orders" className="text-sm font-semibold text-primary-600 hover:text-primary-500">Voir tout</a>
+                    </div>
+                    
+                    {stats.upcoming_deadlines?.length > 0 ? (
+                        <div className="grid gap-3">
+                            {stats.upcoming_deadlines.map(order => (
+                                <Card key={order.id} className="hover:border-primary-500/30 transition-colors">
+                                    <CardContent className="p-4 flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-semibold text-text truncate max-w-[200px]">{order.client?.full_name || 'Inconnu'}</h3>
+                                            <p className="text-xs text-text-subtle mt-1 flex items-center gap-1.5">
+                                                <Clock className="w-3.5 h-3.5" />
+                                                Due {new Date(order.due_date).toLocaleDateString('fr-FR')}
+                                            </p>
                                         </div>
                                         <StatusBadge status={order.status} />
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center text-text-muted bg-dark-50/50 dark:bg-dark-900/50 rounded-2xl border border-dashed border-border/50">
+                            <Clock className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                            <p className="text-sm">Aucune commande urgente.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Debtors List */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-display font-bold text-text flex items-center gap-2">
+                            Clients en Dette <span className="bg-rose-500/10 text-rose-500 text-xs px-2 py-0.5 rounded-full">{stats.debtors?.length || 0}</span>
+                        </h2>
+                    </div>
+                    
+                    {stats.debtors?.length > 0 ? (
+                        <div className="grid gap-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+                            {stats.debtors.map((debtor, idx) => {
+                                const phone = debtor.client?.phone || '';
+                                const cleanPhone = phone.replace(/\D/g, '');
+                                const message = `Bonjour ${debtor.client?.full_name}, c'est l'atelier TailleurPro. Nous vous rappelons un solde de ${(debtor.amount_owed).toLocaleString('fr-FR')} FCFA. Merci de nous contacter.`;
+                                const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('221') ? cleanPhone : '221'+cleanPhone}?text=${encodeURIComponent(message)}` : '#';
+                                
+                                return (
+                                    <div key={idx} className="bg-bg-elevated border border-border p-4 rounded-xl flex items-center justify-between hover:shadow-md transition-all">
+                                        <div>
+                                            <h3 className="font-semibold text-text">{debtor.client?.full_name || 'Inconnu'}</h3>
+                                            <p className="text-rose-500 font-bold text-sm mt-0.5">-{debtor.amount_owed.toLocaleString('fr-FR')} F</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {phone && (
+                                                <>
+                                                    <a href={`tel:${phone}`} title="Appeler" className="p-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded-full transition-colors">
+                                                        <Phone className="w-4 h-4" />
+                                                    </a>
+                                                    <a href={waLink} target="_blank" rel="noreferrer" title="WhatsApp" className="p-2 bg-green-500/10 text-green-500 hover:bg-green-500/20 rounded-full transition-colors">
+                                                        <MessageCircle className="w-4 h-4" />
+                                                    </a>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
-                                    <h3 className="font-semibold text-text truncate">{order.client?.full_name || 'Client inconnu'}</h3>
-                                    <p className="text-sm text-text-muted mt-0.5 truncate">{order.fabric_description || 'Sans description'}</p>
-                                    <p className="text-xs text-text-subtle mt-3 flex items-center gap-1.5">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        À livrer le {new Date(order.due_date).toLocaleDateString('fr-FR')}
-                                    </p>
-                                </CardContent>
-                            </Card>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center text-text-muted bg-dark-50/50 dark:bg-dark-900/50 rounded-2xl border border-dashed border-border/50">
+                            <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-20" />
+                            <p className="text-sm">Aucun client n'a de dette.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Revenue By Event */}
+            <div className="space-y-4 pt-4 border-t border-border">
+                <h2 className="text-xl font-display font-bold text-text">Revenus par Événement</h2>
+                {stats.revenue_by_event?.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {stats.revenue_by_event.map((ev, idx) => (
+                            <div key={idx} className="bg-bg-elevated border border-border p-4 rounded-xl flex flex-col items-center justify-center text-center hover:shadow-md transition-all">
+                                <span className="text-xs font-semibold text-text-muted uppercase mb-1">{ev.event}</span>
+                                <span className="text-lg font-bold text-green-500">{ev.total_revenue.toLocaleString('fr-FR')} F</span>
+                            </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="py-8 text-center text-text-muted bg-dark-50/50 dark:bg-dark-900/50 rounded-2xl border border-dashed border-border/50">
-                        <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                        <p>Aucune commande à livrer prochainement.</p>
-                    </div>
+                    <p className="text-sm text-text-muted italic">Données insuffisantes.</p>
                 )}
             </div>
 
@@ -132,16 +209,14 @@ export default function Dashboard() {
 
 function StatCard({ title, value, icon: Icon, color, bg }) {
     return (
-        <Card className="hover:scale-[1.02]">
-            <CardContent className="flex items-center gap-4 p-5">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bg} ${color}`}>
-                    <Icon className="w-6 h-6" />
-                </div>
-                <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">{title}</p>
-                    <p className="text-2xl font-bold text-text mt-1">{value}</p>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="bg-bg-elevated border border-border rounded-xl p-4 hover:shadow-lg transition-all flex flex-col items-start gap-3">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bg} ${color}`}>
+                <Icon className="w-4 h-4" />
+            </div>
+            <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted whitespace-nowrap overflow-hidden text-ellipsis w-full max-w-[100px]">{title}</p>
+                <p className="text-lg font-bold text-text mt-0.5 tracking-tight">{value}</p>
+            </div>
+        </div>
     );
 }

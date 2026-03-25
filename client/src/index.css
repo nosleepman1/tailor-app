@@ -4,32 +4,33 @@
 
 @layer base {
   :root {
-    /* Theme Light: Elegant Tailor Light */
-    --color-bg: #F9FAFB;
-    --color-bg-elevated: #FFFFFF;
+    /* Theme Light: Atelier & Pureté */
+    --color-bg: #FDFBF7;             /* Ivoire Doux */
+    --color-bg-elevated: #FFFFFF;    /* Blanc Pur */
+    --color-bg-level2: #F4F5F7;      /* Hover surface */
     
-    --color-text: #111827;           /* Text primary */
-    --color-text-muted: #4B5563;     /* Text secondary */
-    --color-text-subtle: #9CA3AF;    /* Text muted */
+    --color-text: #2C3E50;           /* Bleu Nuit Ardoise */
+    --color-text-muted: #4A5F73;     
+    --color-text-subtle: #8E735B;    /* Bronze Taupe */
 
-    --color-border: #E5E7EB;
-    --color-shadow: rgba(30, 58, 95, 0.05);
+    --color-border: #E8E4D9;
+    --color-shadow: rgba(44, 62, 80, 0.08);
 
-    /* Primary: Bleu Profond */
-    --color-primary-50: #F1F5F9;
-    --color-primary-100: #E2E8F0;
-    --color-primary-500: #1E3A5F;
-    --color-primary-600: #152A4A;
+    /* Primary: Doré Mat */
+    --color-primary-50: #FBF8F0;
+    --color-primary-100: #F4E9C8;
+    --color-primary-500: #D4AF37;
+    --color-primary-600: #B8962E;
 
-    /* Accent: Or / Doré */
+    /* Accent: Or / Doré Chaud */
     --color-gold-500: #D4AF37;
-    --color-gold-600: #B39129;
+    --color-gold-600: #B8962E;
 
-    /* Secondary / Dark variants (Gris couture #6B7280) */
-    --color-dark-50: #F3F4F6;
-    --color-dark-100: #E5E7EB;
-    --color-dark-800: #6B7280;
-    --color-dark-900: #4B5563;
+    /* Secondary / Dark variants (Slate) */
+    --color-dark-50: #F4F5F7;
+    --color-dark-100: #E2E6EA;
+    --color-dark-800: #34495E;
+    --color-dark-900: #2C3E50;
 
     /* États */
     --color-success: #10B981;
@@ -38,32 +39,36 @@
   }
 
   [data-theme='dark'] {
-    /* Theme Dark: Luxury Tailor Dark */
-    --color-bg: #020617;
-    --color-bg-elevated: #0B1220;
+    /* Theme Dark: Luxe & Soirée */
+    --color-bg-level0: #121212;      /* Noir Profond */
+    --color-bg-level1: #1E1E1E;      /* Gris Anthracite */
+    --color-bg-level2: #2A2A2A;
+
+    --color-bg: var(--color-bg-level0);
+    --color-bg-elevated: var(--color-bg-level1);
     
-    --color-text: #F9FAFB;           /* Text primary */
-    --color-text-muted: #CBD5F5;     /* Text secondary */
-    --color-text-subtle: #64748B;    /* Text muted */
+    --color-text: #E0E0E0;           /* Gris Perle */
+    --color-text-muted: #A0A0A0;     
+    --color-text-subtle: #757575;    
 
-    --color-border: #1E293B;
-    --color-shadow: rgba(0, 0, 0, 0.4);
+    --color-border: #333333;         /* Fusain */
+    --color-shadow: rgba(0, 0, 0, 0.7);
 
-    /* Primary: Bleu Nuit */
-    --color-primary-50: rgba(15, 23, 42, 0.5);
-    --color-primary-100: rgba(15, 23, 42, 0.8);
-    --color-primary-500: #0F172A;
-    --color-primary-600: #1E293B;
+    /* Primary: Or Brillant */
+    --color-primary-50: rgba(255, 215, 0, 0.1);
+    --color-primary-100: rgba(255, 215, 0, 0.2);
+    --color-primary-500: #FFD700;
+    --color-primary-600: #E6C200;
 
     /* Accent: Or brillant */
     --color-gold-500: #FFD700;
     --color-gold-600: #E6C200;
 
-    /* Secondary / Dark variants (Gris foncé #1F2933) */
-    --color-dark-50: rgba(31, 41, 51, 0.3);
-    --color-dark-100: rgba(31, 41, 51, 0.5);
-    --color-dark-800: #1F2933;
-    --color-dark-900: #0F172A;
+    /* Secondary / Dark variants */
+    --color-dark-50: rgba(255, 255, 255, 0.05);
+    --color-dark-100: rgba(255, 255, 255, 0.1);
+    --color-dark-800: #2E2E2E;
+    --color-dark-900: #121212;
 
     /* États */
     --color-success: #22C55E;
@@ -223,8 +228,61 @@
     font-weight: 500;
   }
 
+  .badge-gold {
+    background-color: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
+    color: var(--color-primary-600);
+    border: 1px solid color-mix(in srgb, var(--color-primary-500) 30%, transparent);
+  }
+  .dark .badge-gold, [data-theme='dark'] .badge-gold {
+    color: var(--color-primary-500);
+    border-color: color-mix(in srgb, var(--color-primary-500) 20%, transparent);
+  }
+
+  .badge-blue {
+    background-color: color-mix(in srgb, var(--color-dark-800) 10%, transparent);
+    color: var(--color-dark-800);
+    border: 1px solid color-mix(in srgb, var(--color-dark-800) 20%, transparent);
+  }
+  .dark .badge-blue, [data-theme='dark'] .badge-blue {
+    color: var(--color-dark-100);
+    border-color: color-mix(in srgb, var(--color-dark-100) 20%, transparent);
+  }
+
+  .badge-green {
+    background-color: color-mix(in srgb, var(--color-success) 10%, transparent);
+    color: var(--color-success);
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  }
+  .dark .badge-green, [data-theme='dark'] .badge-green {
+    border-color: color-mix(in srgb, var(--color-success) 20%, transparent);
+  }
+
+  .badge-red {
+    background-color: color-mix(in srgb, var(--color-error) 10%, transparent);
+    color: var(--color-error);
+    border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+  }
+  .dark .badge-red, [data-theme='dark'] .badge-red {
+    border-color: color-mix(in srgb, var(--color-error) 20%, transparent);
+  }
+
   .page-enter {
     animation: fadeIn 0.3s ease forwards;
+  }
+
+  .animate-modal-in {
+    animation: modalIn 0.2s ease-out forwards;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

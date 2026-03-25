@@ -8,13 +8,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 class User extends Authenticatable
 {
-    use HasApiTokens;
+    use HasApiTokens, HasPushSubscriptions;
 
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    use HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -22,13 +26,23 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'name',
         'firstname',
         'lastname',
-        'username',
-        'role',
         'email',
+        'phone',
+        'username',
         'password',
-        'is_active',
+        'pin',
+        'role',
+        'profile_photo',
+        'city',
+        'active',
+        'is_subscribed',
+        'theme',
+        'email_notifications',
+        'in_app_notifications',
+        'marketing_emails',
     ];
 
     /**
@@ -52,5 +66,37 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function hasRole($roles): bool
+    {
+        if (is_array($roles) || is_iterable($roles)) {
+            foreach ($roles as $r) {
+                if ($this->role === $r) return true;
+            }
+            return false;
+        }
+        return $this->role === $roles;
+    }
+    
+
+    public function clients()
+    {
+        return $this->hasMany(Client::class, 'tailor_id');
+    }
+
+    public function commandes()
+    {
+        return $this->hasMany(Commande::class, 'tailor_id');
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->subscriptions()->active()->latest()->first();
     }
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Scissors, CalendarDays, Shield, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Scissors, CalendarDays, Shield, User } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import clsx from 'clsx';
 
@@ -21,10 +21,17 @@ export function MobileTabBar() {
         { name: 'Commandes', to: '/admin/orders', icon: LayoutDashboard },
     ];
 
-    const links = isAdmin ? adminLinks : tailorLinks;
+    const baseLinks = isAdmin ? adminLinks : tailorLinks;
+    const links = [
+        ...baseLinks,
+        { name: 'Profil', to: '/settings', isProfile: true }
+    ];
 
     return (
-        <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-bg-elevated/90 backdrop-blur-lg border-t border-border z-40 flex items-center justify-around px-2 pb-safe">
+        <nav 
+            className="md:hidden fixed bottom-0 inset-x-0 bg-bg-elevated/90 backdrop-blur-lg border-t border-border z-[100] flex items-center justify-around px-2"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)', height: 'calc(64px + env(safe-area-inset-bottom))' }}
+        >
             {links.map((link) => (
                 <NavLink
                     key={link.to}
@@ -36,7 +43,15 @@ export function MobileTabBar() {
                 >
                     {({ isActive }) => (
                         <>
-                            <link.icon className={clsx("w-6 h-6", isActive && "fill-primary-500/20 stroke-[2.5px]")} />
+                            {link.isProfile ? (
+                                user?.avatar ? (
+                                    <img src={user.avatar} alt="Profile" className={clsx("w-6 h-6 rounded-full object-cover", isActive && "ring-2 ring-primary-500 border border-bg-elevated")} />
+                                ) : (
+                                    <User className={clsx("w-6 h-6", isActive && "fill-primary-500/20 stroke-[2.5px]")} />
+                                )
+                            ) : (
+                                <link.icon className={clsx("w-6 h-6", isActive && "fill-primary-500/20 stroke-[2.5px]")} />
+                            )}
                             <span className="text-[10px] font-medium tracking-wide">{link.name}</span>
                         </>
                     )}

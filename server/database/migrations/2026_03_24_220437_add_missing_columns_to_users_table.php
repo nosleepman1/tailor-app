@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('clients', function (Blueprint $table) {
-            $table->boolean('is_paid')->default(false)->after('price');
-            $table->boolean('livre')->default(false)->after('is_paid');
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('username')->nullable()->unique()->after('lastname');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::table('clients', function (Blueprint $table) {
-            $table->dropColumn(['is_paid', 'livre']);
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn(['username']);
         });
     }
 };

@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuthStore } from '@/store/authStore';
-import { LayoutDashboard, Users, Scissors, CalendarDays, X, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Scissors, CalendarDays, X, Shield, Settings, User } from 'lucide-react';
 
 export function Sidebar({ isOpen, onClose }) {
     const user = useAuthStore(state => state.user);
@@ -43,8 +43,12 @@ export function Sidebar({ isOpen, onClose }) {
 
                 <div className="p-6 pb-2">
                     <div className="flex items-center gap-3 bg-dark-50 dark:bg-dark-900/50 p-3 rounded-xl border border-border/50">
-                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold">
-                            {user?.name?.charAt(0)?.toUpperCase()}
+                        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold overflow-hidden">
+                            {user?.avatar ? (
+                                <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                user?.name?.charAt(0)?.toUpperCase()
+                            )}
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-text truncate">{user?.name}</p>
@@ -78,6 +82,28 @@ export function Sidebar({ isOpen, onClose }) {
                         </NavLink>
                     ))}
                 </nav>
+
+                <div className="p-4 border-t border-border">
+                    <NavLink
+                        to="/settings"
+                        onClick={() => {
+                            if (window.innerWidth < 1024) onClose();
+                        }}
+                        className={({ isActive }) => clsx(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors group",
+                            isActive 
+                                ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-500" 
+                                : "text-text-muted hover:text-text hover:bg-dark-50 dark:hover:bg-dark-800/50"
+                        )}
+                    >
+                        {({ isActive }) => (
+                            <>
+                                <Settings className={clsx("w-5 h-5", isActive ? "text-primary-600 dark:text-primary-500" : "text-text-subtle group-hover:text-text-muted")} />
+                                Paramètres
+                            </>
+                        )}
+                    </NavLink>
+                </div>
             </aside>
         </>
     );

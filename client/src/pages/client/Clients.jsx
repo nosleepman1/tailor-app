@@ -13,7 +13,8 @@ export default function Clients() {
 
     useEffect(() => {
         api.get('/clients').then(({ data }) => {
-            setClients(data);
+            setClients(data.data);
+            
             setLoading(false);
         });
     }, []);
@@ -38,7 +39,7 @@ export default function Clients() {
             </div>
 
             <Card>
-                <div className="p-4 border-b border-border bg-dark-50/50 dark:bg-dark-900/50 rounded-t-2xl">
+                <div className="p-4 border-b border-border bg-transparent rounded-t-2xl">
                     <Input 
                         icon={Search} 
                         placeholder="Rechercher par nom ou téléphone..." 
@@ -51,7 +52,7 @@ export default function Clients() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-border text-xs uppercase text-text-subtle bg-dark-50/50 dark:bg-dark-900/50">
+                            <tr className="border-b border-border text-xs uppercase text-text-subtle bg-transparent">
                                 <th className="px-6 py-4 font-semibold">Nom</th>
                                 <th className="px-6 py-4 font-semibold">Téléphone</th>
                                 <th className="px-6 py-4 font-semibold">Commandes Actives</th>
