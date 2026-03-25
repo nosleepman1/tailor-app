@@ -13,6 +13,7 @@ class CheckSubscription
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
@@ -21,12 +22,10 @@ class CheckSubscription
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // Admin bypass (assuming admins don't need a subscription)
         if ($user->role === 'admin') {
             return $next($request);
         }
 
-        // Check active subscription
         if (!$user->activeSubscription()) {
             return response()->json([
                 'success' => false,

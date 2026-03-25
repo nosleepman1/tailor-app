@@ -10,6 +10,7 @@ use App\Models\Subscription;
 use App\Models\PaymentLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\MultiChannelNotification;
 
 class SubscriptionController extends Controller
 {
@@ -25,20 +26,24 @@ class SubscriptionController extends Controller
      */
     public function plans(): JsonResponse
     {
-        return response()->json([
-            [
-                'id' => 'basic',
-                'name' => 'Basic',
-                'price' => 2500,
-                'features' => ['Feature 1', 'Feature 2']
-            ],
-            [
-                'id' => 'premium',
-                'name' => 'Premium',
-                'price' => 5000,
-                'features' => ['Feature 1', 'Feature 2', 'Feature 3']
-            ]
-        ]);
+        $plans = \Illuminate\Support\Facades\Cache::remember('dexpay_subscription_plans', 86400, function () {
+            return [
+                [
+                    'id' => 'basic',
+                    'name' => 'Basic',
+                    'price' => 2500,
+                    'features' => ['Feature 1', 'Feature 2']
+                ],
+                [
+                    'id' => 'premium',
+                    'name' => 'Premium',
+                    'price' => 5000,
+                    'features' => ['Feature 1', 'Feature 2', 'Feature 3']
+                ]
+            ];
+        });
+
+        return response()->json($plans);
     }
 
     /**
@@ -56,8 +61,18 @@ class SubscriptionController extends Controller
         
         $reference = 'TAILLEUR_' . $user->id . '_' . time();
 
-        $appUrl = $request->getSchemeAndHttpHost();
+        $appUrl = env('APP_URL') ?: $request->getSchemeAndHttpHost();
         $frontendUrl = env('APP_FRONTEND_URL', 'http://localhost:5173');
+
+        // WORKAROUND: DexPay API strictly REJECTS `localhost` or `127.0.0.1` in ANY url.
+        // We use a dummy public domain if we are developing locally so the API doesn't throw 422.
+        $isLocal = str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1');
+        $validApiUrl = $isLocal ? 'https://tailleurapp.com' : $appUrl;
+
+        $phone = $user->phone ?? '770000000';
+        if (!preg_match('/^\+/', $phone)) {
+            $phone = '+221' . ltrim($phone, '0');
+        }
 
         $sessionData = [
             'reference' => $reference,
@@ -65,13 +80,13 @@ class SubscriptionController extends Controller
             'amount' => $amount,
             'currency' => 'XOF',
             'countryISO' => 'SN',
-            'success_url' => "{$appUrl}/api/v2/subscriptions/success-redirect?ref={$reference}",
-            'failure_url' => "{$appUrl}/api/v2/subscriptions/failure-redirect?ref={$reference}",
-            'webhook_url' => "{$appUrl}/api/v2/webhooks/dexpay",
+            'success_url' => "{$validApiUrl}/api/v2/subscriptions/success-redirect?ref={$reference}",
+            'failure_url' => "{$validApiUrl}/api/v2/subscriptions/failure-redirect?ref={$reference}",
+            'webhook_url' => "{$validApiUrl}/api/v2/webhooks/dexpay",
             'customer' => [
-                'name' => $user->name,
-                'email' => $user->email ?? 'abdallahdiouf.dev@gmail.com',
-                'phone' => '773757077'
+                'name' => trim($user->name ?: ($user->firstname . ' ' . $user->lastname)) ?: 'Client Tailleur',
+                'email' => $user->email ?? 'test@tailleurapp.com',
+                'phone' => $phone
             ]
         ];
 
@@ -145,6 +160,13 @@ class SubscriptionController extends Controller
                     'status' => 'completed'
                 ]);
 
+                $request->user()->notify(new MultiChannelNotification(
+                    'Abonnement activé !',
+                    'Votre paiement a réussi. Profitez de toutes nos fonctionnalités !',
+                    'general',
+                    url('/settings')
+                ));
+
                 return response()->json(['status' => 'active']);
             }
 
@@ -159,7 +181,10 @@ class SubscriptionController extends Controller
      */
     public function current(Request $request): JsonResponse
     {
-        $subscription = $request->user()->activeSubscription();
+        $user = $request->user();
+        $subscription = \Illuminate\Support\Facades\Cache::tags(['tailor_' . $user->id])->rememberForever('current_subscription', function () use ($user) {
+            return $user->activeSubscription();
+        });
         return response()->json(['subscription' => $subscription]);
     }
 
@@ -202,6 +227,13 @@ class SubscriptionController extends Controller
                         'expires_at' => Carbon::now()->addMonth(),
                     ]);
                     $subscription->user()->update(['is_subscribed' => true]);
+
+                    $subscription->user->notify(new MultiChannelNotification(
+                        'Paiement de l\'abonnement réussi',
+                        'Nous avons bien reçu votre paiement. Votre abonnement est maintenant actif.',
+                        'general',
+                        url('/settings')
+                    ));
                 }
             }
         }

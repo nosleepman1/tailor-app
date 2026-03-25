@@ -9,10 +9,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 class User extends Authenticatable
 {
-    use HasApiTokens;
+    use HasApiTokens, HasPushSubscriptions;
 
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
@@ -26,8 +27,11 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'firstname',
+        'lastname',
         'email',
         'phone',
+        'username',
         'password',
         'pin',
         'role',
@@ -35,6 +39,10 @@ class User extends Authenticatable
         'city',
         'active',
         'is_subscribed',
+        'theme',
+        'email_notifications',
+        'in_app_notifications',
+        'marketing_emails',
     ];
 
     /**
@@ -70,6 +78,7 @@ class User extends Authenticatable
         }
         return $this->role === $roles;
     }
+    
 
     public function clients()
     {

@@ -35,12 +35,13 @@ $makhtoum = User::firstOrCreate(
     ]
 );
 $makhtoum->assignRole('tailor');
-Subscription::firstOrCreate(
-    ['user_id' => $makhtoum->id, 'status' => 'active'],
+Subscription::updateOrCreate(
+    ['user_id' => $makhtoum->id],
     [
+        'status' => 'active',
         'plan' => 'basic',
         'amount' => 2500,
-        'dexpay_reference' => 'MANUAL_SEED_1',
+        'dexpay_reference' => 'MANUAL_SEED_1_' . time(),
         'starts_at' => Carbon::now(),
         'expires_at' => Carbon::now()->addMonths(1)
     ]
@@ -58,15 +59,16 @@ $procouture = User::firstOrCreate(
     ]
 );
 $procouture->assignRole('tailor');
-Subscription::firstOrCreate(
-    ['user_id' => $procouture->id, 'status' => 'active'],
+Subscription::updateOrCreate(
+    ['user_id' => $procouture->id],
     [
+        'status' => 'active',
         'plan' => 'premium',
         'amount' => 5000,
-        'dexpay_reference' => 'MANUAL_SEED_2',
+        'dexpay_reference' => 'MANUAL_SEED_2_' . time(),
         'starts_at' => Carbon::now(),
         'expires_at' => Carbon::now()->addMonths(1)
     ]
 );
 
-echo "Les 3 utilisateurs ont été créés avec succès !";
+echo "Les 3 utilisateurs ont été créés et abonnés avec succès !";
