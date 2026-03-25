@@ -1,76 +1,9 @@
-FROM php:8.2-fpm-alpine AS php
+# Backend Laravel (Local Dev)
+FROM php:8.3-alpine
 
-
-RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    sqlite \
-    git \
-    curl \
-    libzip-dev \
-    zip \
-    unzip \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    oniguruma-dev \
-    postgresql-dev
-
-
-
-
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-    pdo_mysql \
-    pdo_pgsql \
-    pdo_sqlite \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    zip \
-    sockets \
-    opcache
-
-
-
-
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-
-
-
-WORKDIR /var/www
-COPY server .
-
-
-
-
-RUN composer install --no-interaction --optimize-autoloader --no-scripts
-COPY docker/nginx/conf.d /etc/nginx/conf.d
-COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
-
-
-
-
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
-
-
-EXPOSE 9000 80
-
-
-
-
-CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-# Backend Laravel (PHP + Nginx)
-FROM php:8.2-fpm-alpine
-
-# Dépendances système
-RUN apk add --no-cache nginx supervisor sqlite libzip-dev zip unzip \
-    libpng-dev libjpeg-turbo-dev freetype-dev git curl
+# Systèmes
+RUN apk add --no-cache sqlite sqlite-dev oniguruma-dev libzip-dev zip unzip \
+    libpng-dev libjpeg-turbo-dev freetype-dev git curl bash
 
 # Extensions PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -87,29 +20,9 @@ COPY server .
 # Dépendances PHP
 RUN composer install --no-interaction --optimize-autoloader --no-scripts
 
-# Nginx
-RUN echo 'server { \
-    listen 80; \
-    root /var/www/public; \
-    index index.php; \
-    location / { try_files $uri $uri/ /index.php?$query_string; } \
-    location ~ \.php$ { \
-        fastcgi_pass 127.0.0.1:9000; \
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name; \
-        include fastcgi_params; \
-        fastcgi_read_timeout 300; \
-    } \
-}' > /etc/nginx/http.d/default.conf
-
-# PHP
-RUN echo 'memory_limit=256M\nupload_max_filesize=64M\npost_max_size=64M' > /usr/local/etc/php/conf.d/custom.ini
-
-# Supervisor (PHP-FPM + Nginx)
-RUN echo '[supervisord]\nnodaemon=true\n\n[program:php-fpm]\ncommand=php-fpm -D\nautorestart=true\n\n[program:nginx]\ncommand=nginx -g "daemon off;"\nautorestart=true' > /etc/supervisord.conf
-
 # Permissions
-RUN chown -R www-data:www-data /var/www && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+RUN chown -R www-data:www-data /var/www && chmod -R 775 /var/www/storage /var/www/bootstrap/cache || true
 
-EXPOSE 80
+EXPOSE 8000
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
