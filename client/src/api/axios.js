@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-    baseURL: 'http://16.170.155.45/api/v2',
+    baseURL: 'https://tailor-api.mooo.com/api/v2',
     headers: { 
         'Content-Type': 'application/json', 
         'Accept': 'application/json',
