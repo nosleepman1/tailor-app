@@ -62,11 +62,11 @@ class SubscriptionController extends Controller
         $reference = 'TAILLEUR_' . $user->id . '_' . time();
 
         $appUrl = env('APP_URL') ?: $request->getSchemeAndHttpHost();
-        $frontendUrl = env('APP_FRONTEND_URL', 'http://localhost:5173');
+        $frontendUrl = env('APP_FRONTEND_URL', 'http://192.168.1.3:5173');
 
         // WORKAROUND: DexPay API strictly REJECTS `localhost` or `127.0.0.1` in ANY url.
         // We use a dummy public domain if we are developing locally so the API doesn't throw 422.
-        $isLocal = str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1');
+        $isLocal = str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1') || str_contains($appUrl, '192.168.');
         $validApiUrl = $isLocal ? 'https://tailleurapp.com' : $appUrl;
 
         $phone = $user->phone ?? '770000000';

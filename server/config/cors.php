@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173', 'https://tailleur-senegal.vercel.app'],
+    'allowed_origins' => ['http://192.168.1.3:5173', 'https://tailleur-senegal.vercel.app'],
 
     'allowed_origins_patterns' => ['#^https://.*\.vercel\.app$#'],
 
