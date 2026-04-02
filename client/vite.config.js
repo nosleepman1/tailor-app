@@ -4,21 +4,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
-  server: {
-    host: '0.0.0.0',
-    port: 5173,
-    https: true,
-    proxy: {
-      '/api': {
-        target: 'http://192.168.1.3:8000',
-        changeOrigin: true,
-      },
-      '/storage': {
-        target: 'http://192.168.1.3:8000',
-        changeOrigin: true,
-      }
-    }
-  },
   plugins: [
     basicSsl(),
     react(),
