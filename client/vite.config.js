@@ -1,9 +1,26 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    https: true,
+    proxy: {
+      '/api': {
+        target: 'http://192.168.1.3:8000',
+        changeOrigin: true,
+      },
+      '/storage': {
+        target: 'http://192.168.1.3:8000',
+        changeOrigin: true,
+      }
+    }
+  },
   plugins: [
+    basicSsl(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -23,22 +40,15 @@ export default defineConfig({
           { src: 'logo.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       },
+      strategies: 'injectManifest',
+      srcDir: 'public',
+      filename: 'sw.js',
+      injectManifest: {
+        injectionPoint: null, // Ignore precaching warnings for now, focus on push
+      },
       devOptions: {
         enabled: true,
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\/api\/v2\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
-              networkTimeoutSeconds: 10,
-            },
-          },
-        ],
+        type: 'module',
       },
     }),
   ],
