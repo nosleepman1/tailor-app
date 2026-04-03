@@ -94,7 +94,7 @@ export default function AdminEvents() {
                         Aucun événement créé.
                     </div>
                 ) : (
-                    events.map(event => (
+                    events?.map(event => (
                         <Card key={event.id} hover className="relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none group-hover:bg-primary-500/20 transition-colors"></div>
                             <CardContent className="relative">
