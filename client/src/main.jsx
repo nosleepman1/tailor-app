@@ -28,19 +28,36 @@ const queryClient = new QueryClient({
   },
 });
 
+// 🔥 In development, unregister ALL service workers to prevent loops
+if (import.meta.env.MODE === 'development') {
+  console.log('[Dev Mode] Unregistering all service workers...');
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      console.log(`Found ${registrations.length} service workers`);
+      for (let registration of registrations) {
+        registration.unregister().then(() => {
+          console.log('[SW] Unregistered:', registration.scope);
+        });
+      }
+    });
+  }
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  // 🔧 StrictMode disabled in dev to prevent double effect calls
     <QueryClientProvider client={queryClient}>
         <ThemeProvider>
             <App />
         </ThemeProvider>
     </QueryClientProvider>
-  </React.StrictMode>
 )
 
-// If PWA plugin isn't auto-registering, fallback to manual registration
-if (typeof registerServiceWorker === 'function') {
-  registerServiceWorker();
-} else if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
+// ✅ Only register PWA in production
+if (import.meta.env.MODE === 'production') {
+  // If PWA plugin isn't auto-registering, fallback to manual registration
+  if (typeof registerServiceWorker === 'function') {
+    registerServiceWorker();
+  } else if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+  }
 }

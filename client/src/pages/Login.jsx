@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Mail, Phone, Lock, Scissors } from 'lucide-react'
 
 export default function Login() {
-  const login = useAuthStore(state => state.login)
-  const loading = useAuthStore(state => state.isLoading)
-  const error = useAuthStore(state => state.error)
+  const { login, isLoading, error, user } = useAuth()
   const navigate = useNavigate()
   
   const [form, setForm] = useState({ login: '', password_or_pin: '' })
@@ -20,8 +18,8 @@ export default function Login() {
     e.preventDefault()
     const success = await login({ ...form, isAdmin: isAdminLogin })
     if (success) {
-      const user = useAuthStore.getState().user;
-      navigate(user?.role === 'admin' ? '/admin/dashboard' : '/dashboard', { replace: true })
+      // Let the router handle the redirect based on user role
+      navigate(isAdminLogin ? '/admin/dashboard' : '/dashboard', { replace: true })
     }
   }
 
@@ -95,7 +93,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                isLoading={loading}
+                isLoading={isLoading}
                 className="w-full mt-4"
               >
                 Se connecter

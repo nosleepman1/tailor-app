@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
 import { User, Phone, Mail, Lock, Scissors, MapPin } from 'lucide-react'
 
 export default function Register() {
-  const register = useAuthStore(state => state.register)
-  const loading = useAuthStore(state => state.isLoading)
-  const error = useAuthStore(state => state.error)
+  const { register, isLoading, error } = useAuth()
   const navigate = useNavigate()
   
   const [form, setForm] = useState({ 
@@ -100,7 +98,7 @@ export default function Register() {
 
               <Button
                 type="submit"
-                isLoading={loading}
+                isLoading={isLoading}
                 className="w-full mt-2"
               >
                 Créer mon compte

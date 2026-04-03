@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuthStore } from '@/store/authStore'
 import { useTheme } from '@/contexts/ThemeContext'
 
 const adminLinks = [
@@ -14,7 +14,8 @@ const clientLinks = [
 ]
 
 export default function Navbar() {
-  const { user, isAdmin, logout } = useAuth()
+  const { user, logout } = useAuthStore()
+  const isAdmin = user?.role === 'admin'
   const { theme, setTheme, isDark } = useTheme()
   const location = useLocation()
   const navigate = useNavigate()
