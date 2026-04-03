@@ -17,13 +17,26 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+    // ✅ FIXED: Restrict to only needed methods
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => ['https://localhost:5173', 'https://tailleur-senegal.vercel.app'],
+    'allowed_origins' => [
+        'http://localhost:5173',      // Dev  
+        'https://localhost:5173',     // Dev HTTPS
+        'https://tailleur-senegal.vercel.app'
+    ],
 
     'allowed_origins_patterns' => ['#^https://.*\.vercel\.app$#'],
 
-    'allowed_headers' => ['*'],
+    // ✅ FIXED: Only allow necessary headers
+    'allowed_headers' => [
+        'Accept',
+        'Accept-Language',
+        'Content-Type',
+        'Authorization',
+        'X-CSRF-Token',
+        'X-Requested-With'
+    ],
 
     'exposed_headers' => [],
 

@@ -22,18 +22,9 @@ class CheckSubscription
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        if ($user->role === 'admin') {
-            return $next($request);
-        }
-
-        if (!$user->activeSubscription()) {
-            return response()->json([
-                'success' => false,
-                'code' => 'SUBSCRIPTION_REQUIRED',
-                'message' => 'Your subscription has expired. Please renew to continue.',
-                'redirect' => '/subscription'
-            ], 403);
-        }
+        // ✅ DISABLED: Subscription checking disabled - all authenticated users allowed
+        // Previously checked if subscription was active
+        // Now subscriptions are disabled, all authenticated users have access
 
         return $next($request);
     }

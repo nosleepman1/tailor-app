@@ -48,8 +48,9 @@ Route::prefix('v2')->group(function () {
     
  
  
-    // Public Webhook (DexPay)
-    Route::post('/webhooks/dexpay', [\App\Http\Controllers\Api\SubscriptionController::class, 'webhook']);
+    // ✅ DISABLED: Public Webhook (DexPay) - Subscriptions disabled
+    // Route::post('/webhooks/dexpay', [\App\Http\Controllers\Api\SubscriptionController::class, 'webhook']);
+
     
     
     
@@ -68,8 +69,8 @@ Route::prefix('v2')->group(function () {
         Route::post('/push/subscribe', [PushSubscriptionController::class, 'subscribe']);
         Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'unsubscribe']);
 
-        // Subscription routes bypass the check.subscription middleware
-        
+        // ✅ DISABLED: Subscription routes - Feature disabled
+        /*
         Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
             Route::get('/success-redirect', function (Request $request) {
                 return redirect(env('APP_FRONTEND_URL', 'http://localhost:5173') . '/subscription/success?ref=' . $request->ref);
@@ -82,23 +83,24 @@ Route::prefix('v2')->group(function () {
             Route::get('/verify', [\App\Http\Controllers\Api\SubscriptionController::class, 'verify'])->name('verify');
             Route::get('/current', [\App\Http\Controllers\Api\SubscriptionController::class, 'current'])->name('current');
         });
+        */
 
 
 
-        Route::middleware('check.subscription')->group(function () {
-            // Admin Only
-            Route::prefix('admin')->group(function () {
-                Route::get('tailors', [AdminAuthController::class, 'getTailors']);
-                Route::post('tailors', [AdminAuthController::class, 'registerTailor']);
-            });
-            
-
-
-            // Tailor Only / Shared -> Scoped later in policies
-            Route::apiResource('clients', V2ClientController::class);
-            Route::apiResource('events', V2EventController::class);
-            Route::apiResource('commandes', V2CommandeController::class);
-            Route::get('dashboard', [DashboardController::class, 'index']);
+        // ✅ Fixed: Removed check.subscription middleware - subscriptions disabled
+        // All authenticated users can access all resources
+        // Authorization is handled by policies (@see app/Policies)
+        
+        // Admin Only
+        Route::prefix('admin')->group(function () {
+            Route::get('tailors', [AdminAuthController::class, 'getTailors']);
+            Route::post('tailors', [AdminAuthController::class, 'registerTailor']);
         });
+        
+        // Tailor Only / Shared -> Scoped later in policies
+        Route::apiResource('clients', V2ClientController::class);
+        Route::apiResource('events', V2EventController::class);
+        Route::apiResource('commandes', V2CommandeController::class);
+        Route::get('dashboard', [DashboardController::class, 'index']);
     });
 });
