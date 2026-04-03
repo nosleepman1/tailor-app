@@ -30,6 +30,16 @@ const userService = {
     const res = await api.put(`/users/${id}`, { is_active })
     return res.data
   },
+
+  async getTailors(params = {}) {
+    const res = await api.get('/admin/tailors', { params })
+    return res.data
+  },
+
+  async createTailor(payload) {
+    const res = await api.post('/admin/tailors', payload)
+    return res.data
+  },
 }
 
 export default userService

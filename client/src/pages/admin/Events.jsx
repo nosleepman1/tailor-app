@@ -1,49 +1,28 @@
-import { useState, useEffect } from 'react';
-import api from '@/api/axios';
+import { useState } from 'react';
+import { useEvents, useCreateEvent } from '@/hooks/useEvents';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CalendarDays, Plus, Check } from 'lucide-react';
 
 export default function AdminEvents() {
-    const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: events = [], isLoading: loading } = useEvents();
+    const createEventMutation = useCreateEvent();
     const [showForm, setShowForm] = useState(false);
     
     const [form, setForm] = useState({ name: '', date: '', description: '', is_recurring: false });
-    const [creating, setCreating] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
-
-    useEffect(() => {
-        fetchEvents();
-    }, []);
-
-    async function fetchEvents() {
-        setLoading(true);
-        try {
-            const { data } = await api.get('/events');
-            setEvents(data);
-        } catch (error) {
-            console.error('Failed to load events', error);
-        } finally {
-            setLoading(false);
-        }
-    }
 
     async function handleCreate(e) {
         e.preventDefault();
-        setCreating(true);
         setSuccessMessage('');
         try {
-            await api.post('/events', form);
+            await createEventMutation.mutateAsync(form);
             setSuccessMessage(`Événement ${form.name} créé avec succès !`);
             setShowForm(false);
             setForm({ name: '', date: '', description: '', is_recurring: false });
-            fetchEvents();
         } catch (error) {
             console.error('Failed to create event', error);
-        } finally {
-            setCreating(false);
         }
     }
 
@@ -99,7 +78,7 @@ export default function AdminEvents() {
                             </div>
                             <div className="flex justify-end gap-3 pt-2">
                                 <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Annuler</Button>
-                                <Button type="submit" isLoading={creating}>Enregistrer</Button>
+                                <Button type="submit" isLoading={createEventMutation.isPending}>Enregistrer</Button>
                             </div>
                         </form>
                     </CardContent>

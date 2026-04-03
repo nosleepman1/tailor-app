@@ -1,24 +1,12 @@
-import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/api/axios';
+import { useDashboardStats } from '@/hooks/useDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Users, Scissors, ClipboardList, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
     const user = useAuthStore(state => state.user);
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        api.get('/dashboard').then(({ data }) => {
-            setStats(data.stats);
-            setLoading(false);
-        }).catch(err => {
-            console.error("Failed to load admin stats", err);
-            setLoading(false);
-        });
-    }, []);
+    const { data: stats, isLoading: loading } = useDashboardStats();
 
     if (loading) {
         return <div className="animate-pulse space-y-6">

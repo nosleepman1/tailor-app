@@ -1,28 +1,12 @@
-import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/api/axios';
+import { useDashboardStats } from '@/hooks/useDashboard';
 import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Users, ClipboardList, TrendingUp, Clock, AlertCircle, Phone, MessageCircle, DollarSign, CalendarCheck } from 'lucide-react';
 
 export default function Dashboard() {
     const user = useAuthStore(state => state.user);
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        async function fetchStats() {
-            try {
-                const { data } = await api.get('/dashboard');
-                setStats(data.stats);
-            } catch (error) {
-                console.error("Failed to load dashboard stats", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchStats();
-    }, []);
+    const { data: stats, isLoading: loading } = useDashboardStats();
 
     if (loading) {
         return (

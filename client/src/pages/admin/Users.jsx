@@ -1,51 +1,30 @@
-import { useState, useEffect } from 'react';
-import api from '@/api/axios';
+import { useState } from 'react';
+import { useTailors, useCreateTailor } from '@/hooks/useUsers';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Scissors, Search, Plus, Phone, Check, Activity } from 'lucide-react';
 
 export default function AdminUsers() {
-    const [tailors, setTailors] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: tailors = [], isLoading: loading } = useTailors();
+    const createTailorMutation = useCreateTailor();
     const [search, setSearch] = useState('');
     const [showForm, setShowForm] = useState(false);
     
     // Create Tailor Form State
     const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', pin: '' });
-    const [creating, setCreating] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
-
-    useEffect(() => {
-        fetchTailors();
-    }, []);
-
-    async function fetchTailors() {
-        setLoading(true);
-        try {
-            const { data } = await api.get('/admin/tailors');
-            setTailors(data);
-        } catch (error) {
-            console.error('Failed to load tailors', error);
-        } finally {
-            setLoading(false);
-        }
-    }
 
     async function handleCreate(e) {
         e.preventDefault();
-        setCreating(true);
         setSuccessMessage('');
         try {
-            await api.post('/admin/tailors', form);
+            await createTailorMutation.mutateAsync(form);
             setSuccessMessage(`Tailleur ${form.name} créé avec succès !`);
             setShowForm(false);
             setForm({ name: '', phone: '', email: '', city: '', pin: '' });
-            fetchTailors();
         } catch (error) {
             console.error('Failed to create tailor', error);
-        } finally {
-            setCreating(false);
         }
     }
 
@@ -90,7 +69,7 @@ export default function AdminUsers() {
                             </div>
                             <div className="flex justify-end gap-3 pt-2">
                                 <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Annuler</Button>
-                                <Button type="submit" isLoading={creating}>Enregistrer le Tailleur</Button>
+                                <Button type="submit" isLoading={createTailorMutation.isPending}>Enregistrer le Tailleur</Button>
                             </div>
                         </form>
                     </CardContent>

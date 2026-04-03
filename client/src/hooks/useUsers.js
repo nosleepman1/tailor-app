@@ -1,52 +1,89 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import userService from '@/services/userService'
 
 export function useUsers() {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-
-  const fetchUsers = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
       const res = await userService.getUsers()
-      const raw = res?.data ?? res
-      setData(Array.isArray(raw) ? raw : raw?.data ?? [])
-    } catch (err) {
-      setError(err.response?.data?.message || 'Erreur lors du chargement')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+      return res?.data ?? res
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
 
-  useEffect(() => { fetchUsers() }, [fetchUsers])
+export function useUser(id) {
+  return useQuery({
+    queryKey: ['users', id],
+    queryFn: async () => {
+      const res = await userService.getUser(id)
+      return res?.data ?? res
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
 
-  async function createUser(payload) {
-    const res = await userService.createUser(payload)
-    const newUser = res?.data ?? res?.user ?? res
-    setData(prev => [newUser, ...prev])
-    return newUser
-  }
+export function useCreateUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: userService.createUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
 
-  async function updateUser(id, payload) {
-    const res = await userService.updateUser(id, payload)
-    const updated = res?.data ?? res
-    setData(prev => prev.map(u => u.id === id ? updated : u))
-    return updated
-  }
+export function useUpdateUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }) => userService.updateUser(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
 
-  async function deleteUser(id) {
-    await userService.deleteUser(id)
-    setData(prev => prev.filter(u => u.id !== id))
-  }
+export function useDeleteUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: userService.deleteUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
 
-  async function toggleActive(id, is_active) {
-    const res = await userService.toggleActive(id, is_active)
-    const updated = res?.data ?? res
-    setData(prev => prev.map(u => u.id === id ? updated : u))
-    return updated
-  }
+export function useToggleUserActive() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, is_active }) => userService.toggleActive(id, is_active),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
 
-  return { data, loading, error, refetch: fetchUsers, createUser, updateUser, deleteUser, toggleActive }
+export function useTailors() {
+  return useQuery({
+    queryKey: ['tailors'],
+    queryFn: async () => {
+      const res = await userService.getTailors()
+      return res?.data ?? res
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+export function useCreateTailor() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: userService.createTailor,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tailors'] })
+    },
+  })
 }

@@ -1,27 +1,13 @@
-import { useState, useEffect } from 'react';
-import api from '@/api/axios';
+import { useState } from 'react';
+import { useOrders } from '@/hooks/useOrders';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Search, Scissors, User } from 'lucide-react';
 
 export default function AdminOrders() {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: orders = [], isLoading: loading } = useOrders();
     const [search, setSearch] = useState('');
-
-    useEffect(() => {
-
-        api.get('/commandes').then(({ data }) => {
-            setOrders(data.data || data);
-            setLoading(false);
-        }).catch(() => {
-            setLoading(false);
-        }).finally(() => {
-            console.log(orders);
-
-        })
-    }, []);
 
     const filtered = orders?.filter(o =>
         (o.client?.full_name?.toLowerCase().includes(search.toLowerCase())) ||

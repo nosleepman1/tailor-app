@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useClients } from '@/hooks/useClients'
+import { useClients, useUpdateClientStatus } from '@/hooks/useClients'
 import { getStorageUrl } from '@/utils/storageUrl'
 
 export default function ClientDetail({ clientId, onClose, onDelete }) {
-  const { data: clients, updateClientStatus } = useClients()
+  const { data: clients = [] } = useClients()
+  const updateClientStatusMutation = useUpdateClientStatus()
   const client = clients?.find((c) => c.id === clientId)
 
   useEffect(() => {
@@ -23,11 +24,11 @@ export default function ClientDetail({ clientId, onClose, onDelete }) {
 
   async function togglePaid() {
     if (!client.price) return
-    await updateClientStatus(client.id, { is_paid: !client.is_paid })
+    await updateClientStatusMutation.mutateAsync({ id: client.id, payload: { is_paid: !client.is_paid } })
   }
 
   async function toggleLivre() {
-    await updateClientStatus(client.id, { livre: !client.livre })
+    await updateClientStatusMutation.mutateAsync({ id: client.id, payload: { livre: !client.livre } })
   }
 
   return (

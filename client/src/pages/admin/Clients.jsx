@@ -5,7 +5,7 @@ import Loader from '@/components/Loader'
 import { useClients } from '@/hooks/useClients'
 
 export default function AdminClients() {
-  const { data: clients, loading } = useClients()
+  const { data: clients = [], isLoading: loading } = useClients()
   const [search, setSearch] = useState('')
 
   const filtered = clients.filter(c => {
