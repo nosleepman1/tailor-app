@@ -1,22 +1,12 @@
-import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
+import { Link } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import LogoutButton from '@/pages/settings/LogoutButton'
 import { User, ShieldCheck, Bell, ChevronRight, Moon } from 'lucide-react'
 
 export default function SettingsPage() {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    if (!user) {
-      navigate('/login')
-    }
-  }, [user, navigate])
-
-  if (!user) return null
 
   const menuItems = [
     {
