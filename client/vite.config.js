@@ -1,11 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
   plugins: [
-    basicSsl(),
     react(),
     // 🔥 Only enable PWA plugin in production to prevent dev loops
     ...(process.env.NODE_ENV === 'production' ? [
@@ -77,13 +75,19 @@ export default defineConfig({
   },
   // 🚀 DEV SERVER OPTIMIZATION
   server: {
-    // Compression
-    compression: 'gzip',
-    // When using library mode (not needed here but for reference)
+    port: 5173,
     hmr: {
-      protocol: 'wss',
+      protocol: 'ws',
       host: 'localhost',
       port: 5173,
+    },
+    // Proxy API calls to Laravel backend — évite les problèmes CORS/HTTPS en dev
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   // 🚀 PREVIEW OPTIMIZATION (production build preview)

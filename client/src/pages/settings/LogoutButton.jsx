@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
+import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { LogOut } from 'lucide-react'
 
 export default function LogoutButton() {
-  const { logout } = useAuthStore()
+  const { logout } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
 

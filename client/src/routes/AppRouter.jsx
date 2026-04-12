@@ -22,8 +22,9 @@ const SettingsPage     = lazy(() => import('@/pages/SettingsPage'))
 const ProfileSettingsPage     = lazy(() => import('@/pages/settings/ProfileSettingsPage'))
 const NotificationSettingsPage     = lazy(() => import('@/pages/settings/NotificationSettingsPage'))
 
-// ✅ Protected Route wrapper
+
 function ProtectedRoute({ children, adminOnly = false }) {
+  
   const { isAuthenticated, user } = useAuth()
 
   if (!isAuthenticated) {
@@ -37,33 +38,38 @@ function ProtectedRoute({ children, adminOnly = false }) {
   return children
 }
 
-// ✅ Redirect based on role
+
+
 function RoleRedirect() {
+
   const { isAuthenticated, user } = useAuth()
 
   if (!isAuthenticated) return <Navigate to="/login" replace />
   return <Navigate to={user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'} replace />
 }
 
+
 export default function AppRouter() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Suspense fallback={<Loader fullscreen />}>
         <Routes>
-          {/* Public Routes */}
+        
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<RoleRedirect />} />
 
-          {/* Protected Area */}
+        
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-            {/* Admin Routes */}
+            
+
             <Route path="/admin/dashboard" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tailors" element={<ProtectedRoute adminOnly><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/events" element={<ProtectedRoute adminOnly><AdminEvents /></ProtectedRoute>} />
             <Route path="/admin/orders" element={<ProtectedRoute adminOnly><AdminOrders /></ProtectedRoute>} />
 
-            {/* Client Routes */}
+        
+
             <Route path="/dashboard" element={<ClientDashboard />} />
             <Route path="/clients" element={<ClientClients />} />
             <Route path="/clients/new" element={<ClientForm />} />
@@ -78,8 +84,9 @@ export default function AppRouter() {
             <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
           </Route>
 
-          {/* Fallback */}
+
           <Route path="*" element={<Navigate to="/" replace />} />
+
         </Routes>
       </Suspense>
     </BrowserRouter>
