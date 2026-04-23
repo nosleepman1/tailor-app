@@ -5,7 +5,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     react(),
-    // 🔥 Only enable PWA plugin in production to prevent dev loops
+    
+
     ...(process.env.NODE_ENV === 'production' ? [
       VitePWA({
         registerType: 'autoUpdate',
@@ -50,7 +51,7 @@ export default defineConfig({
           'vendor-icons': ['lucide-react'],
           'vendor-ui': ['tailwindcss'],
           
-          // Route-based chunks (lazy load pages)
+
           'page-auth': ['./src/pages/Login.jsx', './src/pages/Register.jsx'],
           'page-dashboard': ['./src/pages/client/Dashboard.jsx', './src/pages/admin/Dashboard.jsx'],
           'page-clients': ['./src/pages/client/Clients.jsx', './src/pages/client/ClientForm.jsx'],
@@ -58,7 +59,7 @@ export default defineConfig({
         }
       }
     },
-    // Optimize chunks
+
     minify: 'terser',
     terserOptions: {
       compress: {
