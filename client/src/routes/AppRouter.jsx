@@ -73,10 +73,13 @@ export default function AppRouter() {
             <Route path="/orders/new" element={<OrderForm />} />
             <Route path="/orders/:id" element={<OrderDetail />} />
             <Route path="/kanban" element={<KanbanBoard />} />
+
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/profile" element={<ProfileSettingsPage />} />
-            <Route path="/settings/notifications" element={<NotificationSettingsPage />} />
+            <Route path="/settings/notifications" element={<NotificationSettingsPage />} /> 
+           
           </Route>
+          
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

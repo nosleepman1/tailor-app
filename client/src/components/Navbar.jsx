@@ -7,13 +7,16 @@ const adminLinks = [
   { to: '/admin/dashboard', label: 'Tableau de bord', icon: '⬡' },
   { to: '/admin/users',     label: 'Utilisateurs',    icon: '◎' },
   { to: '/admin/clients',   label: 'Clients',         icon: '◈' },
+  
 ]
 const clientLinks = [
   { to: '/dashboard', label: 'Tableau de bord', icon: '⬡' },
   { to: '/clients',   label: 'Mes clients',     icon: '◈' },
+  
 ]
 
 export default function Navbar() {
+
   const { user, logout } = useAuthStore()
   const isAdmin = user?.role === 'admin'
   const { theme, setTheme, isDark } = useTheme()
