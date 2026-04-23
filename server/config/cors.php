@@ -26,9 +26,9 @@ return [
         'https://tailleur-senegal.vercel.app'
     ],
 
-    'allowed_origins_patterns' => ['#^https://.*\.vercel\.app$#'],
+    'allowed_origins_patterns' => ['#^http://localhost:5173$#'],
 
-    // ✅ FIXED: Only allow necessary headers
+    
     'allowed_headers' => [
         'Accept',
         'Accept-Language',
