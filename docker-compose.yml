@@ -1,0 +1,92 @@
+services:
+  # ── Backend API (PHP 8.3 FPM + Nginx + Queues + Scheduler) ───────
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: tailor-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8080"
+    environment:
+      APP_NAME: "TailleurPro API"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:8000"
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: tailor_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: secret_local_password
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RUN_MIGRATIONS: "true"
+      RUN_SEEDERS: "true"
+      ENABLE_QUEUE_WORKER: "true"
+      ENABLE_SCHEDULER: "true"
+      QUEUE_WORKER_PROCS: "2"
+    volumes:
+      - ./server:/var/www/html
+      - tailor_storage:/var/www/html/storage/app/public
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tailor-network
+
+  # ── PostgreSQL Database ──────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: tailor-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: tailor_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret_local_password
+    volumes:
+      - tailor_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tailor_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tailor-network
+
+  # ── Redis Cache & Queue Broker ───────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: tailor-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - tailor_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tailor-network
+
+networks:
+  tailor-network:
+    driver: bridge
+
+volumes:
+  tailor_pgdata:
+    driver: local
+  tailor_redisdata:
+    driver: local
+  tailor_storage:
+    driver: local
