@@ -19,21 +19,18 @@ class PaymentLog extends Model
         'status',
     ];
 
-    protected $casts = [
-        'payload' => 'array',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'payload' => 'array',
+        ];
+    }
 
-    /**
-     * Get the subscription associated with this payment log.
-     */
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
     }
 
-    /**
-     * Get the user associated with this payment log.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
