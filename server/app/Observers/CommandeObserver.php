@@ -7,13 +7,14 @@ use Illuminate\Support\Facades\Cache;
 
 class CommandeObserver
 {
-    /**
-     * Clear the tailor's cache whenever a commande is modified.
-     */
-    protected function clearCache(Commande $commande)
+    protected function clearCache(Commande $commande): void
     {
         if ($commande->tailor_id) {
-            Cache::tags(['tailor_' . $commande->tailor_id])->flush();
+            try {
+                Cache::tags(["tailor_{$commande->tailor_id}"])->flush();
+            } catch (\Throwable $e) {
+                // If cache tags not supported, ignore
+            }
         }
     }
 

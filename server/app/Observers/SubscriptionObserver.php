@@ -7,13 +7,14 @@ use Illuminate\Support\Facades\Cache;
 
 class SubscriptionObserver
 {
-    /**
-     * Clear the tailor's cache whenever a subscription changes.
-     */
-    protected function clearCache(Subscription $subscription)
+    protected function clearCache(Subscription $subscription): void
     {
         if ($subscription->user_id) {
-            Cache::tags(['tailor_' . $subscription->user_id])->flush();
+            try {
+                Cache::tags(["tailor_{$subscription->user_id}"])->flush();
+            } catch (\Throwable $e) {
+                // Ignore if tags not supported
+            }
         }
     }
 

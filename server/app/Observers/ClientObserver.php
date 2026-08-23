@@ -7,13 +7,14 @@ use Illuminate\Support\Facades\Cache;
 
 class ClientObserver
 {
-    /**
-     * Clear the tailor's cache whenever a client is modified.
-     */
-    protected function clearCache(Client $client)
+    protected function clearCache(Client $client): void
     {
         if ($client->tailor_id) {
-            Cache::tags(['tailor_' . $client->tailor_id])->flush();
+            try {
+                Cache::tags(["tailor_{$client->tailor_id}"])->flush();
+            } catch (\Throwable $e) {
+                // If cache tags not supported, ignore
+            }
         }
     }
 

@@ -7,12 +7,13 @@ use Illuminate\Support\Facades\Cache;
 
 class EventObserver
 {
-    /**
-     * Clear the events cache globally.
-     */
-    protected function clearCache(Event $event)
+    protected function clearCache(Event $event): void
     {
-        Cache::tags(['events'])->flush();
+        try {
+            Cache::tags(['events'])->flush();
+        } catch (\Throwable $e) {
+            // Ignore if tags not supported
+        }
     }
 
     public function created(Event $event): void
