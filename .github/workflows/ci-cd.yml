@@ -12,10 +12,6 @@ on:
       - develop
   workflow_dispatch:
 
-concurrency:
-  group: self-hosted-pipeline-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   # ─────────────────────────────────────────────────────────────
   # Pipeline Complet End-to-End (Self-Hosted Runner)
