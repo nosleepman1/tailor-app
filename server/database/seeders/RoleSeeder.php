@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class RoleSeeder extends Seeder
 {
@@ -12,9 +13,14 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'tailor', 'guard_name' => 'web']);
-        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api']);
-        Role::firstOrCreate(['name' => 'tailor', 'guard_name' => 'api']);
+        // Reset cached roles and permissions
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // Create Roles for web and api guards
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $tailorRole = Role::firstOrCreate(['name' => 'tailor', 'guard_name' => 'web']);
+
+        $adminApi = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api']);
+        $tailorApi = Role::firstOrCreate(['name' => 'tailor', 'guard_name' => 'api']);
     }
 }
