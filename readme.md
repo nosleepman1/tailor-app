@@ -1,184 +1,143 @@
-# TailleurPro — Hub du Système
+# 🧵 TailleurPro — Écosystème SaaS de Gestion pour Tailleurs
 
-TailleurPro est un écosystème de gestion de tailleurs et de suivi des commandes. Il se compose d'un client React sous forme de Progressive Web App (PWA) mobile-first et d'un serveur API Laravel 12 robuste et sécurisé, soutenu par des conteneurs PostgreSQL et Redis.
+TailleurPro est une solution SaaS complète et haute performance conçue pour les artisans tailleurs et maisons de couture. Elle permet de gérer les fiches de mesures, le cycle de fabrication des commandes, les acomptes et la comptabilité d'atelier, avec un support **Offline-First** (mode hors-ligne en atelier) et une intégration de paiement **PayDunya**.
 
 ---
 
-## 🏗️ Aperçu de l'Architecture
+## 🏗️ Architecture Technique
 
-L'architecture du système est divisée en trois composants principaux : le client, le serveur et les couches d'infrastructure.
+Le backend est propulsé par **Laravel 12**, **PostgreSQL** et **Redis**, structuré selon une **Clean Architecture en Couches** :
 
 ```mermaid
 graph TD
-    A[Client React PWA] -->|Axios JSON/Multipart| B[Proxy Inverse Nginx]
-    B -->|Socket Unix| C[Serveur API Laravel 12]
-    C -->|Eloquent| D[(Base de données PostgreSQL)]
-    C -->|Predis| E[(Cache & File d'attente Redis)]
-    C -->|Canal Webpush| F[Passerelle Notifications Push]
+    A[Client Mobile Expo / Web PWA] -->|HTTPS REST JSON| B[Nginx / Proxy]
+    B --> C[Laravel 12 API - Router Modulaire]
+    C --> D[Controllers HTTP V2]
+    D --> E[Services & Actions Métier]
+    E --> F[Repositories Eloquent]
+    F --> G[(PostgreSQL)]
+    E --> H[(Redis Cache & Queues)]
+    E --> I[Passerelle Paiement PayDunya]
+    E --> J[Expo Push Notifications Service]
 ```
 
-### 📂 Structure du Dépôt
-
-- **[client/](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/client)** : Application frontend React / Vite / Tailwind CSS.
-- **[server/](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server)** : Application backend API Laravel 12.
-- **[docker-compose.yml](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/docker-compose.yml)** : Orchestration de haut niveau pour le développement local et les environnements de staging.
-- **[.github/workflows/](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/.github/workflows)** : Configurations CI/CD, tests unitaires, scans de sécurité et déploiements.
-
----
-
-## 💻 Client Frontend
-
-Le frontend est une Progressive Web App (PWA) construite avec React 18, Vite et Tailwind CSS. Il est entièrement responsive, orienté mobile-first, et prend en charge un mode hors ligne complet.
-
-### Fonctionnalités Clés
-- **Mode Hors Ligne** : Fonctionne hors ligne via des files d'attente dans le stockage local (`offlineQueue.js`) et un gestionnaire de synchronisation automatique (`syncManager.js`) au retour de la connexion.
-- **Interface Interactive** : Formulaires de création de clients en plusieurs étapes, listes de clients avec recherche floue, graphiques statistiques interactifs avec `Chart.js` & `Recharts`, et composants de notifications dynamiques.
-- **Service Worker / PWA** : Support intégré pour la mise en cache des assets via `vite-plugin-pwa` et bannières hors ligne d'avertissement.
-
-### Technologies Principales
-- **Framework** : React 18 & Vite 8
-- **Styling** : Tailwind CSS
-- **Gestion d'État** : Zustand
-- **Requêtes & Cache** : TanStack React Query & Axios
-- **Support Hors ligne** : Workbox / PWA Plugin
+### 🧱 Couches Architecturales
+- **`app/Traits/ApiResponse.php`** : Formatage uniforme de toutes les réponses JSON (`success`, `message`, `data`, `meta`, `errors`).
+- **`bootstrap/app.php`** : Intercepteur global d'exceptions (Validation, Auth, 404, 403, 429, 500) garantissant 100% de réponses JSON sans crash.
+- **`app/Http/Controllers/Api/V2/`** : Contrôleurs allégés gérant uniquement la couche HTTP.
+- **`app/Services/`** : Logique métier (Auth, Clients, Commandes, Dashboard agrégé, PayDunya, Sync, Expo Push).
+- **`app/Repositories/`** : Inversion de contrôle et abstraction de l'accès aux données.
+- **`routes/api/v2/`** : Découpage modulaire des routes (`auth`, `users`, `clients`, `commandes`, `events`, `dashboard`, `payments`, `admin`, `sync`).
 
 ---
 
-## ⚙️ Serveur API Backend
+## 🔐 Sécurité & Rôles (RBAC)
 
-L'API est propulsée par Laravel 12 et fournit une authentification de type OAuth via Laravel Sanctum, des autorisations basées sur les rôles, des tâches en arrière-plan, et des canaux de notifications push.
-
-### Fonctionnalités Clés
-- **Gestion des Versions d'API** : Architecture standardisée pour les API v1 et v2 (`routes/api.php`).
-- **Rôles & Autorisations** : Gestion des accès fins basée sur des Policies Laravel et le package Spatie Laravel Permission.
-- **Notifications Web Push** : Système d'abonnement et d'envoi de push web basé sur l'échange de clés VAPID.
-- **Facturation & Abonnements** : Schéma d'abonnements et historique des paiements (Note : *ces fonctionnalités sont actuellement désactivées dans les routes V2*).
-
-### Schéma de Base de Données / Modèles Eloquent
-- **[User](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/app/Models/User.php)** : Tailleurs ou Administrateurs (configuration du profil, préférences de notification).
-- **[Client](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/app/Models/Client.php)** : Clients (données démographiques, mensures stockées sous forme de tableau JSON).
-- **[Commande](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/app/Models/Commande.php)** : Commandes (délais, statut des paiements, liaisons aux clients et événements).
-- **[Event](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/app/Models/Event.php)** : Événements d'agenda / rendez-vous.
-- **[Measurement](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/app/Models/Measurement.php)** : Fiches de mesures de couture détaillées.
-- **PaymentLog**, **Revenue**, **Subscription** : Logs de transactions, suivi des revenus et abonnements de licence.
+1. **Codes PIN Sécurisés** : Le code PIN à 4 chiffres des tailleurs est hashé avec `Hash::make()` en base de données et masqué de toute sérialisation JSON (`$hidden`).
+2. **Rate Limiting (Anti Brute-force)** : Middleware `throttle:5,1` appliqué sur les routes d'authentification.
+3. **RBAC Spatie & Policies** : Cloisonnement strict multi-tenant (`ClientPolicy`, `CommandePolicy`, `EventPolicy`, `UserPolicy`).
+4. **Super Admin Platform** : Protection stricte par middleware `role:admin`.
 
 ---
 
-## 🐳 DevOps & Conteneurisation
+## 🔑 Identifiants de Test & Données Pré-remplies
 
-### 1. Architectures Docker
-
-#### 🟢 Conteneur Client — [client/Dockerfile](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/client/Dockerfile)
-Basé sur une image légère `node:20-alpine`, ce conteneur fait tourner l'application cliente en mode développement/preview :
-- Répertoire de travail : `/app/`
-- Port exposé : `5173`
-- Commande par défaut : `npm run dev`
-
-#### 🔵 Conteneur Serveur — [server/Dockerfile](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/Dockerfile)
-Une construction multi-étapes (multi-stage) conçue pour la mise en production :
-- **Étape 1 (Composer)** : Utilise `composer:2.7` pour installer les dépendances backend de production avec chargement optimisé (`--optimize-autoloader`).
-- **Étape 2 (App)** : Utilise `php:8.3-fpm-alpine`, configure le cache des routes/configurations Laravel, communique via sockets Unix FPM, et installe les extensions PHP nécessaires (Zip, BCMath, Intl, PDO PostgreSQL/MySQL, MBString).
-- **Orchestration des Processus** : Lance Nginx (port par défaut `8080`) et PHP-FPM en utilisant **Supervisor** comme gestionnaire de processus PID-1.
-- **Vérification d'état (Health Check)** : Surveille la santé via `curl -f http://localhost:8080/up || exit 1`.
-
-### 2. Fichiers de Configuration des Services
-- **[php-fpm.conf](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/docker/php/php-fpm.conf)** : Restreint l'utilisateur du pool à `laravel`, expose le socket Unix et configure la gestion dynamique des processus (`max_children = 20`, `start_servers = 4`).
-- **[php.ini](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/docker/php/php.ini)** : Sécurise et optimise PHP pour la production (limite mémoire à 256M, taille max d'upload à 64M, désactivation de l'affichage des erreurs et de `allow_url_fopen`).
-- **[default.conf](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/docker/nginx/default.conf)** : Envoie les en-têtes de sécurité (no-sniff, xss-protection, frame-options), transmet les requêtes PHP au socket Unix FPM, bloque l'accès aux fichiers sensibles (`.env`, `.git`), et définit des règles de cache long pour les assets statiques.
-- **[supervisord.conf](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/docker/supervisor/supervisord.conf)** : Gère le cycle de vie de `php-fpm` et `nginx`. Contient des blocs commentés configurables pour exécuter des workers de file d'attente Laravel (`queue:work`).
-- **[entrypoint.sh](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/server/docker/entrypoint.sh)** : Crée automatiquement les liens symboliques de stockage, exécute les migrations de base de données, vide les caches et démarre Supervisor.
-
-### 3. Orchestration Docker Compose
-Le fichier racine **[docker-compose.yml](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/docker-compose.yml)** orchestre l'ensemble des services en local.
-
-| Service | Image/Source Build | Port Hôte | Dossier Partagé / Volume |
-|:---|:---|:---|:---|
-| `frontend` | `./client` | `5173:5173` | `./client:/app` |
-| `backend` | `./server` | `8000:8000` | `./server:/var/www/html` |
-| `nginx` | `./nginx` | `80:80` | `./nginx:/etc/nginx/conf.d` |
-| `db` | `postgres:18.1-alpine` | `5432:5432` | `./db:/var/lib/postgresql/data` |
-| `redis` | `redis:8.4.0-alpine` | `6379:6379` | `./redis:/data` |
-
-> [!WARNING]
-> Assurez-vous que le répertoire `./nginx` existe à la racine du projet ou mettez à jour les chemins de volume du service `nginx` dans `docker-compose.yml` avant de lancer les conteneurs.
-
----
-
-## 🚀 Pipelines CI/CD
-
-Les processus d'intégration automatisés sont gérés via GitHub Actions.
-
-### 1. Qualité du Code & Tests d'Intégration — [.github/workflows/pr-checks.yml](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/.github/workflows/pr-checks.yml)
-Déclenché sur les pull requests ciblant `main`, `staging` ou `develop`.
-- **Scanners de Sécurité** : Détecte les secrets avec Trufflehog et analyse le code pour les vulnérabilités avec Trivy (rapport envoyé à GitHub Security).
-- **Tests d'Intégration** : Instancie un service PostgreSQL temporaire, configure l'environnement et joue la suite de tests Pest d'intégration (`tests/Integration`).
-- **Audit Lighthouse** : Évalue les métriques de performance et de qualité sur le build frontend compilé.
-
-### 2. Pipeline Principal de Déploiement — [.github/workflows/ci-cd.yml](file:///c:/Users/abash/Desktop/_/PROJECTS/BIG/tailor-app/.github/workflows/ci-cd.yml)
-Déclenché sur les pushs vers `main`, `develop`, `staging`.
-- **Tests & Qualité Backend** : Configure PHP 8.2 et Postgres, joue les tests unitaires Pest, valide la mise en forme du code avec Laravel Pint et publie les rapports.
-- **Build Frontend** : Installe les dépendances et compile le code React pour l'upload d'artefacts.
-- **Publication Docker** : Compile et pousse automatiquement l'image Docker de production sur le registre de paquets GitHub Container Registry (`ghcr.io`).
-- **Déploiement Automatique** :
-  - Frontend : Déployé sur **Vercel**.
-  - Backend : Déployé sur **Railway** (via CLI) ou via webhook **Render**.
-- **Alertes** : Envoie des notifications de statut de déploiement sur les canaux **Slack**.
-
----
-
-## 🛠️ Configuration & Installation Locale
-
-### Lancement avec Docker Compose (Recommandé)
-Démarrez l'ensemble des conteneurs avec une seule commande :
+Exécutez les migrations et les seeders pour charger les comptes de test :
 ```bash
-docker-compose up -d --build
-```
-- Frontend : [http://localhost:5173](http://localhost:5173)
-- Backend : [http://localhost:8000](http://localhost:8000)
-
-### Configuration Manuelle (Sans Docker)
-
-#### 💻 1. Configuration du Frontend
-```bash
-cd client
-cp .env.example .env.development
-npm install
-npm run dev
+php artisan migrate:fresh --seed
 ```
 
-#### ⚙️ 2. Configuration du Backend
-Assurez-vous d'avoir PHP 8.2+ et Composer installés localement.
-```bash
-cd server
-cp .env.example .env
-composer install
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve
-```
-Pour démarrer le traitement des files d'attente en arrière-plan :
-```bash
-php artisan queue:work
+| Rôle | Nom | Identifiant (Email / Téléphone) | Mot de passe / PIN | Forfait |
+| :--- | :--- | :--- | :--- | :--- |
+| **Super Admin** | Super Administrateur | `abdallahdiouf.dev@gmail.com` ou `771234567` | `Khoudia1970` | Illimité |
+| **Tailleur Démo 1** | Atelier Makhtoum Couture | `773757077` ou `makhtoum@tailor.app` | PIN: `1234` (Mdp: `passer123`) | Premium |
+| **Tailleur Démo 2** | ProCouture Dakar | `774731493` ou `procouture@tailor.app` | PIN: `5678` (Mdp: `passer123`) | Basique |
+
+---
+
+## 💳 Configuration PayDunya (Abonnements & Acomptes)
+
+Dans votre fichier `.env` :
+```env
+PAYDUNYA_MODE=test # test ou live
+PAYDUNYA_MASTER_KEY=votre_master_key
+PAYDUNYA_PUBLIC_KEY=votre_public_key
+PAYDUNYA_PRIVATE_KEY=votre_private_key
+PAYDUNYA_TOKEN=votre_token
+
+# URL Webhook (Pour tester les webhooks en local avec Ngrok)
+# Lancez : ngrok http 8000
+PAYDUNYA_WEBHOOK_URL=https://votre-sous-domaine.ngrok-free.app/api/v2/payments/webhook
+PAYDUNYA_RETURN_URL=http://localhost:5173/subscription/success
+PAYDUNYA_CANCEL_URL=http://localhost:5173/subscription/cancel
 ```
 
 ---
 
-## 🔑 Variables d'Environnement
+## 📚 Catalogue des Endpoints API V2
 
-### Variables du Client (`client/.env.development`)
-- `VITE_API_URL` : URL de base du serveur API (ex: `http://localhost:8000/api/v2`).
+Toutes les routes sont préfixées par `/api/v2` :
 
-### Variables du Serveur (`server/.env`)
-- `DB_CONNECTION` : `pgsql` / `mysql`
-- `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
-- `REDIS_HOST`, `REDIS_PORT`
-- `WEBPUSH_VAPID_PUBLIC_KEY`, `WEBPUSH_VAPID_PRIVATE_KEY`
+### 1. Authentification (`auth.php`)
+- `POST /api/v2/login` : Connexion par Téléphone/Email + PIN ou Mot de passe. *(Throttled)*
+- `POST /api/v2/register` : Inscription d'un nouveau compte tailleur. *(Throttled)*
+- `GET /api/v2/me` : Profil de l'utilisateur connecté avec rôles et statut d'abonnement.
+- `POST /api/v2/logout` : Révocation du token d'accès Sanctum.
+
+### 2. Paramètres & Préférences (`users.php`)
+- `GET /api/v2/user/profile` : Informations de profil.
+- `PUT /api/v2/user/profile` : Mise à jour nom, email, téléphone, ville.
+- `PUT /api/v2/user/password` : Changement sécurisé de mot de passe.
+- `GET /api/v2/user/preferences` : Préférences (thème, notifications).
+- `PUT /api/v2/user/preferences` : Mise à jour des préférences.
+- `POST /api/v2/user/push-token` : Enregistrement du token Expo Push.
+
+### 3. Clients & Mesures (`clients.php`)
+- `GET /api/v2/clients` : Liste paginée des clients du tailleur (avec recherche et nombre de commandes en cours).
+- `POST /api/v2/clients` : Création d'un client avec ses mensurations complètes.
+- `GET /api/v2/clients/{id}` : Fiche détaillée du client, mesures et historique de commandes.
+- `PUT /api/v2/clients/{id}` : Mise à jour client et mesures.
+- `DELETE /api/v2/clients/{id}` : Suppression d'un client.
+
+### 4. Commandes & Production (`commandes.php`)
+- `GET /api/v2/commandes` : Liste des commandes avec filtres par statut, client ou événement.
+- `POST /api/v2/commandes` : Création de commande (avec client existant ou à la volée, photos, acompte).
+- `GET /api/v2/commandes/{id}` : Détails de la commande, photos, événement et paiements.
+- `PUT /api/v2/commandes/{id}` : Mise à jour de la commande et ajustement d'acompte.
+- `PATCH /api/v2/commandes/{id}/status` : Transition de statut (`pending`, `in_progress`, `ready`, `delivered`, `cancelled`).
+- `DELETE /api/v2/commandes/{id}` : Suppression d'une commande.
+
+### 5. Événements & Calendrier (`events.php`)
+- `GET /api/v2/events` : Liste des événements et fêtes religieuses/nationales (Tabaski, Korité, etc.).
+- `GET /api/v2/events/upcoming` : Événements futurs.
+- `POST /api/v2/events` : Création d'événement (Admin uniquement).
+
+### 6. Dashboard & Métriques (`dashboard.php`)
+- `GET /api/v2/dashboard` : Métriques de l'atelier (commandes actives, livraisons de la semaine, chiffre d'affaires, débiteurs, revenus par événement).
+
+### 7. Paiements PayDunya (`payments.php`)
+- `GET /api/v2/payments/plans` : Liste des forfaits disponibles.
+- `GET /api/v2/payments/current` : Statut de l'abonnement en cours.
+- `POST /api/v2/payments/checkout` : Initialisation d'une facture PayDunya (retourne `checkout_url`).
+- `GET /api/v2/payments/verify` : Vérification du statut de la facture.
+- `POST /api/v2/payments/webhook` : Webhook IPN PayDunya avec vérification SHA-512.
+
+### 8. Super Admin (`admin.php`) *(Protégé par `role:admin`)*
+- `GET /api/v2/admin/stats` : Métriques globales de la plateforme.
+- `GET /api/v2/admin/tailors` : Liste des tailleurs enregistrés.
+- `POST /api/v2/admin/tailors` : Création d'un tailleur avec génération automatique du PIN.
+- `PATCH /api/v2/admin/tailors/{id}/status` : Activation / désactivation d'un compte tailleur.
+- `DELETE /api/v2/admin/tailors/{id}` : Suppression d'un compte tailleur.
+
+### 9. Synchronisation Offline-First Expo (`sync.php`)
+- `GET /api/v2/sync/pull?last_synced_at=...` : Récupération des deltas modifiés depuis le dernier sync.
+- `POST /api/v2/sync/push` : Transmission des créations/modifications effectuées hors-ligne sur mobile.
 
 ---
 
-## 👥 Rôles & Accès aux Routes
+## 🧪 Tests Unitaires & Fonctionnels
 
-| Rôle Utilisateur | Portée des Routes | Chemins d'Accès |
-|:---|:---|:---|
-| **Admin** | Dashboard d'administration & comptes utilisateurs | `/admin/dashboard`, `/admin/users`, `/admin/clients` |
-| **Client (Tailleur)** | Gestion des clients, mesures et suivi des commandes | `/dashboard`, `/clients`, `/clients/new`, `/clients/:id/edit` |
+Pour exécuter la suite de tests Pest / PHPUnit :
+```bash
+php artisan test
+```
