@@ -14,11 +14,11 @@ on:
 
 concurrency:
   group: self-hosted-pipeline-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   # ─────────────────────────────────────────────────────────────
-  # Pipeline Complet End-to-End (En attente du runner Self-Hosted)
+  # Pipeline Complet End-to-End (Self-Hosted Runner)
   # ─────────────────────────────────────────────────────────────
   pipeline:
     name: Build, Test & Deploy
