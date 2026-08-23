@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
+import { getApiUrl } from '../../services/api';
 
 export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -29,7 +30,7 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!name || !phone) {
+    if (!name.trim() || !phone.trim()) {
       Alert.alert('Champs obligatoires', 'Le nom de votre atelier et votre numéro de téléphone sont obligatoires.');
       return;
     }
@@ -47,15 +48,21 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     setLoading(true);
     try {
       await register({
-        name,
-        phone,
-        email: email || undefined,
-        city: city || undefined,
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim() || undefined,
+        city: city.trim() || undefined,
         pin: pin || undefined,
         password: password || undefined,
       });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Erreur lors de la création du compte.';
+      console.log('Register error:', error);
+      let message = 'Erreur lors de la création du compte.';
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.message?.includes('Network Error') || error.code === 'ERR_NETWORK' || !error.response) {
+        message = `Impossible de contacter le serveur API à :\n${getApiUrl()}\n\nVérifiez votre connexion internet ou le statut de Ngrok.`;
+      }
       Alert.alert('Inscription impossible', message);
     } finally {
       setLoading(false);
@@ -128,7 +135,7 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           />
 
           <Input
-            label="Mot de passe"
+            label="Mot de passe (optionnel si PIN défini)"
             placeholder="••••••••"
             value={password}
             onChangeText={setPassword}

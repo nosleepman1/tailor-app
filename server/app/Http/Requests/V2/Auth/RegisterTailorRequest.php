@@ -17,7 +17,7 @@ class RegisterTailorRequest extends FormRequest
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:30|unique:users,phone',
             'email' => 'nullable|email|max:255|unique:users,email',
-            'password' => 'required|string|min:6',
+            'password' => 'nullable|string|min:4',
             'pin' => 'nullable|string|digits:4',
             'city' => 'nullable|string|max:100',
             'expo_push_token' => 'nullable|string',
@@ -31,8 +31,7 @@ class RegisterTailorRequest extends FormRequest
             'phone.required' => 'Le numéro de téléphone est obligatoire.',
             'phone.unique' => 'Ce numéro de téléphone est déjà utilisé par un autre compte.',
             'email.unique' => 'Cette adresse email est déjà utilisée.',
-            'password.required' => 'Le mot de passe est obligatoire.',
-            'password.min' => 'Le mot de passe doit comporter au moins 6 caractères.',
+            'password.min' => 'Le mot de passe doit comporter au moins 4 caractères.',
             'pin.digits' => 'Le code PIN doit comporter exactement 4 chiffres.',
         ];
     }

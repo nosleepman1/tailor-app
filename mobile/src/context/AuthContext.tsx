@@ -55,10 +55,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (loginInput: string, passwordOrPin: string) => {
-    const pushToken = await NotificationService.registerForPushNotifications();
+    // Non-blocking push token registration
+    const pushToken = await NotificationService.registerForPushNotifications().catch(() => null);
+
     const response = await api.post('/login', {
-      login: loginInput,
-      password_or_pin: passwordOrPin,
+      login: loginInput.trim(),
+      password_or_pin: passwordOrPin.trim(),
       expo_push_token: pushToken,
     });
 
@@ -75,11 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (payload: { name: string; phone: string; email?: string; password?: string; pin?: string; city?: string }) => {
-    const pushToken = await NotificationService.registerForPushNotifications();
-    const response = await api.post('/register', {
+    const pushToken = await NotificationService.registerForPushNotifications().catch(() => null);
+
+    const cleanPayload = {
       ...payload,
+      password: payload.password || payload.pin || 'passer123',
       expo_push_token: pushToken,
-    });
+    };
+
+    const response = await api.post('/register', cleanPayload);
 
     const { token: receivedToken, user: receivedUser } = response.data.data;
     setToken(receivedToken);

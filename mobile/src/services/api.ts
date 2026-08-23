@@ -2,37 +2,41 @@ import axios, { AxiosInstance } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
-const getBaseUrl = (): string => {
-  // 1. Check EXPO_PUBLIC_API_URL from mobile/.env (Ngrok / Production)
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
+let currentApiUrl = process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || 'http://192.168.1.16:8008/api/v2';
 
-  // 2. Check if configured in app.json extra
-  const extraApiUrl = Constants.expoConfig?.extra?.apiUrl;
-  if (extraApiUrl) {
-    return extraApiUrl;
-  }
+export const getApiUrl = (): string => currentApiUrl;
 
-  // 3. Default Wi-Fi IP and dedicated port 8008 for direct iPhone access
-  return 'http://192.168.1.16:8008/api/v2';
+export const setCustomApiUrl = async (newUrl: string): Promise<void> => {
+  currentApiUrl = newUrl.trim().replace(/\/+$/, '');
+  if (!currentApiUrl.endsWith('/api/v2')) {
+    currentApiUrl += '/api/v2';
+  }
+  await SecureStore.setItemAsync('tailor_custom_api_url', currentApiUrl);
+  api.defaults.baseURL = currentApiUrl;
 };
 
-export const API_URL = getBaseUrl();
+// Initialize custom URL if saved
+SecureStore.getItemAsync('tailor_custom_api_url').then((savedUrl) => {
+  if (savedUrl) {
+    currentApiUrl = savedUrl;
+    api.defaults.baseURL = savedUrl;
+  }
+}).catch(() => {});
 
 const api: AxiosInstance = axios.create({
-  baseURL: API_URL,
-  timeout: 20000,
+  baseURL: currentApiUrl,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    'ngrok-skip-browser-warning': 'true', // Skip Ngrok warning banner automatically
+    'ngrok-skip-browser-warning': 'true', // Skip Ngrok warning screen automatically
   },
 });
 
-// Request interceptor: Inject Bearer Token
+// Request interceptor: Inject Bearer Token & ensure dynamic baseURL
 api.interceptors.request.use(
   async (config) => {
+    config.baseURL = currentApiUrl;
     const token = await SecureStore.getItemAsync('tailor_auth_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

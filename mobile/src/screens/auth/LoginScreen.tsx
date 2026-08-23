@@ -9,13 +9,15 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Modal,
 } from 'react-native';
-import { Scissors, Lock, Smartphone, Mail } from 'lucide-react-native';
+import { Scissors, Lock, Smartphone, Mail, Settings, Globe, Check } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { PinPad } from '../../components/PinPad';
+import { getApiUrl, setCustomApiUrl } from '../../services/api';
 
 export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { theme } = useTheme();
@@ -27,16 +29,20 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Server URL configuration modal
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [tempApiUrl, setTempApiUrl] = useState(getApiUrl());
+
   const handleLogin = async (overridePin?: string) => {
     const activePinOrPassword = overridePin || (authMode === 'pin' ? pin : password);
 
     if (!phoneOrEmail) {
-      Alert.alert('Erreur', 'Veuillez saisir votre numéro de téléphone ou email.');
+      Alert.alert('Champs requis', 'Veuillez saisir votre numéro de téléphone ou email.');
       return;
     }
 
     if (!activePinOrPassword) {
-      Alert.alert('Erreur', authMode === 'pin' ? 'Veuillez saisir votre code PIN à 4 chiffres.' : 'Veuillez saisir votre mot de passe.');
+      Alert.alert('Champs requis', authMode === 'pin' ? 'Veuillez saisir votre code PIN à 4 chiffres.' : 'Veuillez saisir votre mot de passe.');
       return;
     }
 
@@ -44,8 +50,16 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     try {
       await login(phoneOrEmail, activePinOrPassword);
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Identifiants incorrects ou compte inactif.';
-      Alert.alert('Échec de connexion', message);
+      console.log('Login error:', error);
+      let errorMsg = 'Identifiants incorrects ou compte inactif.';
+
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message?.includes('Network Error') || error.code === 'ERR_NETWORK' || !error.response) {
+        errorMsg = `Impossible de contacter le serveur API à :\n${getApiUrl()}\n\nVérifiez que le serveur ou Ngrok est bien lancé.`;
+      }
+
+      Alert.alert('Échec de connexion', errorMsg);
       if (authMode === 'pin') setPin('');
     } finally {
       setLoading(false);
@@ -59,6 +73,13 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  const handleSaveApiUrl = async () => {
+    if (!tempApiUrl) return;
+    await setCustomApiUrl(tempApiUrl);
+    setShowConfigModal(false);
+    Alert.alert('Serveur mis à jour', `L'application contactera désormais :\n${getApiUrl()}`);
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.bg }]}>
       <KeyboardAvoidingView
@@ -66,6 +87,17 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.scroll}>
+          {/* Settings button in top right */}
+          <View style={styles.topBar}>
+            <TouchableOpacity
+              onPress={() => setShowConfigModal(true)}
+              style={[styles.configBtn, { backgroundColor: theme.bgElevated, borderColor: theme.border }]}
+            >
+              <Globe size={16} color={theme.primary} />
+              <Text style={[styles.configBtnText, { color: theme.textMuted }]}>Serveur API</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Logo & Brand Header */}
           <View style={styles.header}>
             <View style={[styles.logoCircle, { backgroundColor: theme.primaryLight, borderColor: theme.primaryBorder }]}>
@@ -165,6 +197,43 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Configuration Modal */}
+      <Modal visible={showConfigModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: theme.bgElevated, borderColor: theme.border }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Configuration Serveur API</Text>
+            <Text style={[styles.modalSubtitle, { color: theme.textMuted }]}>
+              Indiquez l'URL de votre backend ou lien Ngrok :
+            </Text>
+
+            <Input
+              label="URL API"
+              value={tempApiUrl}
+              onChangeText={setTempApiUrl}
+              placeholder="https://abc.ngrok-free.app/api/v2"
+              autoCapitalize="none"
+              autoCorrect={false}
+              containerStyle={{ marginVertical: 14 }}
+            />
+
+            <View style={styles.modalActions}>
+              <Button
+                title="Annuler"
+                variant="outline"
+                onPress={() => setShowConfigModal(false)}
+                style={{ flex: 1, marginRight: 8 }}
+              />
+              <Button
+                title="Sauvegarder"
+                onPress={handleSaveApiUrl}
+                icon={<Check size={16} color="#FFFFFF" />}
+                style={{ flex: 1, marginLeft: 8 }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -177,9 +246,27 @@ const styles = StyleSheet.create({
     padding: 24,
     justifyContent: 'center',
   },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+  },
+  configBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
+  },
+  configBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   logoCircle: {
     width: 64,
@@ -245,5 +332,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     marginLeft: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    marginTop: 4,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    marginTop: 10,
   },
 });

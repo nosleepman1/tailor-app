@@ -1,35 +1,35 @@
 import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-constants';
 import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
-import api from './api';
 
 // Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} catch (e) {
+  // Safe fallback
+}
 
 export class NotificationService {
   /**
-   * Register device for Push Notifications and send token to backend.
+   * Register device for Push Notifications safely (never throws or blocks).
    */
   static async registerForPushNotifications(): Promise<string | null> {
     try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const { status: existingStatus } = await Notifications.getPermissionsAsync().catch(() => ({ status: 'undetermined' }));
       let finalStatus = existingStatus;
 
       if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
+        const { status } = await Notifications.requestPermissionsAsync().catch(() => ({ status: 'denied' }));
         finalStatus = status;
       }
 
       if (finalStatus !== 'granted') {
-        console.warn('Push notification permission denied.');
         return null;
       }
 
@@ -41,28 +41,19 @@ export class NotificationService {
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#D4AF37',
           sound: 'default',
-        });
+        }).catch(() => {});
       }
 
-      const tokenData = await Notifications.getExpoPushTokenAsync();
-      const token = tokenData.data;
-
-      // Send push token to backend
-      if (token) {
-        await api.post('/user/push-token', { expo_push_token: token }).catch(() => {
-          // Ignore if unauthenticated during initial boot
-        });
-      }
-
-      return token;
+      const tokenData = await Notifications.getExpoPushTokenAsync().catch(() => null);
+      return tokenData?.data || null;
     } catch (error) {
-      console.warn('Error configuring push notifications:', error);
+      // Safe fallback - do not crash app on push token errors
       return null;
     }
   }
 
   /**
-   * Play haptic success feedback and optional alert sound.
+   * Play haptic success feedback.
    */
   static async playSuccessSoundAndHaptic(): Promise<void> {
     try {
