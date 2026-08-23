@@ -1,0 +1,93 @@
+services:
+  # ── Production Backend API Container ─────────────────────────────
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: ghcr.io/nosleepman1/tailor-app-api:latest
+    container_name: tailor-prod-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./server/.env.production
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      RUN_MIGRATIONS: "true"
+      RUN_SEEDERS: "false"
+      ENABLE_QUEUE_WORKER: "true"
+      ENABLE_SCHEDULER: "true"
+      QUEUE_WORKER_PROCS: "4"
+    volumes:
+      - tailor_prod_storage:/var/www/html/storage/app/public
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tailor-prod-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1024M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ── Production PostgreSQL Database ───────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: tailor-prod-postgres
+    restart: always
+    env_file:
+      - ./server/.env.production
+    volumes:
+      - tailor_prod_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tailor-prod-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+
+  # ── Production Redis Cache & Queues ──────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: tailor-prod-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-secure_redis_pass}"]
+    volumes:
+      - tailor_prod_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-secure_redis_pass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tailor-prod-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+networks:
+  tailor-prod-network:
+    driver: bridge
+
+volumes:
+  tailor_prod_pgdata:
+    driver: local
+  tailor_prod_redisdata:
+    driver: local
+  tailor_prod_storage:
+    driver: local
