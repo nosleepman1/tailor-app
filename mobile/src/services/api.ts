@@ -7,8 +7,8 @@ const getBaseUrl = (): string => {
   const extraApiUrl = Constants.expoConfig?.extra?.apiUrl;
   if (extraApiUrl) return extraApiUrl;
 
-  // 2. Default Wi-Fi IP for direct iPhone & Android access
-  return 'http://192.168.1.16:8000/api/v2';
+  // 2. Default Wi-Fi IP and dedicated port 8008 for direct iPhone access
+  return 'http://192.168.1.16:8008/api/v2';
 };
 
 export const API_URL = getBaseUrl();
