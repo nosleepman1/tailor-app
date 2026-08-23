@@ -3,107 +3,78 @@
 namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
+use App\Http\Requests\V2\Client\StoreClientRequest;
+use App\Http\Requests\V2\Client\UpdateClientRequest;
 use App\Models\Client;
+use App\Services\ClientService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Cache;
 
 class ClientController extends Controller
 {
-    public function index(Request $request)
+    use ApiResponse;
+
+    public function __construct(
+        protected ClientService $clientService
+    ) {}
+
+    public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Client::class);
 
-        $user = $request->user();
-        $page = $request->input('page', 1);
-        $perPage = $request->input('per_page', 20);
+        $perPage = min((int) $request->input('per_page', 20), 100);
+        $search = $request->input('search');
 
-        $query = Client::query();
+        $clients = $this->clientService->getPaginatedClients(
+            $request->user(),
+            $perPage,
+            $search
+        );
 
-        if ($user->hasRole('tailor')) {
-            $query->where('tailor_id', $user->id);
-            
-            $cacheKey = "clients_page_{$page}_{$perPage}";
-            
-            $result = Cache::tags(['tailor_' . $user->id])->remember($cacheKey, 1800, function () use ($query, $perPage) {
-                return $query->withCount(['commandes as active_orders_count' => function($q) {
-                        $q->whereIn('status', ['pending', 'in_progress', 'ready']);
-                    }])->latest()->paginate($perPage);
-            });
-            return response()->json($result);
-        }
-
-        return response()->json(
-                $query->withCount(['commandes as active_orders_count' => function($q) {
-                    $q->whereIn('status', ['pending', 'in_progress', 'ready']);
-                }
-            ])->latest()->paginate($perPage));
+        return $this->paginatedResponse($clients, 'Liste des clients récupérée avec succès.');
     }
 
-    public function store(Request $request)
+    public function store(StoreClientRequest $request): JsonResponse
     {
         Gate::authorize('create', Client::class);
 
-        $validated = $request->validate([
-            'full_name' => 'required|string|max:255',
-            'phone' => 'nullable|string',
-            'email' => 'nullable|email',
-            'address' => 'nullable|string',
-            'photo' => 'nullable|string',
-            'measurements' => 'nullable|array',
-            'notes' => 'nullable|string',
-        ]);
+        $client = $this->clientService->createClient(
+            $request->user(),
+            $request->validated()
+        );
 
-        $validated['tailor_id'] = $request->user()->id;
-        $measurements = $validated['measurements'] ?? null;
-        unset($validated['measurements']);
-
-        $client = Client::create($validated);
-
-        if ($measurements) {
-            $client->measurement()->create($measurements);
-        }
-
-        return response()->json($client, 201);
+        return $this->createdResponse($client, 'Client enregistré avec succès.');
     }
 
-    public function show(Client $client)
+    public function show(Client $client): JsonResponse
     {
         Gate::authorize('view', $client);
-        return response()->json($client->load('commandes.event'));
+
+        $clientDetails = $this->clientService->getClientDetails($client);
+
+        return $this->successResponse($clientDetails, 'Détails du client récupérés.');
     }
 
-    public function update(Request $request, Client $client)
+    public function update(UpdateClientRequest $request, Client $client): JsonResponse
     {
         Gate::authorize('update', $client);
 
-        $validated = $request->validate([
-            'full_name' => 'sometimes|string|max:255',
-            'phone' => 'nullable|string',
-            'email' => 'nullable|email',
-            'address' => 'nullable|string',
-            'photo' => 'nullable|string',
-            'measurements' => 'nullable|array',
-            'notes' => 'nullable|string',
-        ]);
+        $updatedClient = $this->clientService->updateClient(
+            $client,
+            $request->validated()
+        );
 
-        $measurements = $validated['measurements'] ?? null;
-        unset($validated['measurements']);
-
-        $client->update($validated);
-
-        if ($measurements) {
-            $client->measurement()->updateOrCreate(['client_id' => $client->id], $measurements);
-        }
-
-        return response()->json($client);
+        return $this->successResponse($updatedClient, 'Client mis à jour avec succès.');
     }
 
-    public function destroy(Client $client)
+    public function destroy(Client $client): JsonResponse
     {
         Gate::authorize('delete', $client);
-        $client->delete();
-        return response()->json(null, 204);
+
+        $this->clientService->deleteClient($client);
+
+        return $this->noContentResponse();
     }
 }

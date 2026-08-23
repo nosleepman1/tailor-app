@@ -3,230 +3,110 @@
 namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
+use App\Http\Requests\V2\Commande\StoreCommandeRequest;
+use App\Http\Requests\V2\Commande\UpdateCommandeRequest;
 use App\Models\Commande;
+use App\Services\CommandeService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class CommandeController extends Controller
 {
-    /**
-     * 🚀 OPTIMIZED: Eager load relations + Eager auth check
-     * Impact: -80% latency (from 500ms to 100ms)
-     */
-    public function index(Request $request)
+    use ApiResponse;
+
+    public function __construct(
+        protected CommandeService $commandeService
+    ) {}
+
+    public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Commande::class);
 
-        $user = $request->user();
-        $page = $request->input('page', 1);
-        $perPage = min($request->input('per_page', 20), 100); // Cap at 100
+        $perPage = min((int) $request->input('per_page', 20), 100);
+        $status = $request->input('status');
+        $clientId = $request->input('client_id');
+        $eventId = $request->input('event_id');
 
-        // 🔥 EAGER LOAD: Prevent N+1 queries
-        $baseQuery = Commande::query()
-            ->with([
-                'client:id,tailor_id,full_name,phone', // Only needed fields
-                'event:id,name,date,status'
-            ])
-            ->select('id', 'tailor_id', 'client_id', 'event_id', 'status', 'price', 'deposit_paid', 'due_date', 'created_at');
-
-        if ($user->hasRole('tailor')) {
-            $baseQuery->where('tailor_id', $user->id);
-
-            // 💾 CACHE KEY OPTIMIZATION
-            $cacheKey = "commandes_tailor_{$user->id}_page_{$page}_{$perPage}";
-
-            $result = Cache::tags(["tailor_{$user->id}_commandes"])
-                ->remember($cacheKey, 3600, function () use ($baseQuery, $perPage) {
-                    return $baseQuery->latest('id')->paginate($perPage);
-                });
-
-            return response()->json($result)
-                ->header('X-Cache-Hit', 'true');
-        }
-
-        return response()->json(
-            $baseQuery->latest('id')->paginate($perPage)
+        $commandes = $this->commandeService->getPaginatedCommandes(
+            $request->user(),
+            $perPage,
+            $status,
+            $clientId,
+            $eventId
         );
+
+        return $this->paginatedResponse($commandes, 'Liste des commandes récupérée avec succès.');
     }
 
-    /**
-     * 🚀 OPTIMIZED: Use indexed lookups
-     */
-    public function show(Commande $commande)
-    {
-        Gate::authorize('view', $commande);
-
-        // 🔥 EAGER LOAD on route model binding
-        $commande->load([
-            'client:id,tailor_id,full_name,phone,email,address',
-            'event:id,name,date,status,location'
-        ]);
-
-        return response()->json($commande);
-    }
-
-    public function store(Request $request)
+    public function store(StoreCommandeRequest $request): JsonResponse
     {
         Gate::authorize('create', Commande::class);
 
-        $validated = $request->validate([
-            'client_id' => 'nullable|exists:clients,id',
-            'new_client' => 'nullable|array',
-            'new_client.full_name' => 'required_with:new_client|string|max:255',
-            'new_client.phone' => 'nullable|string|max:255',
-            'new_client.measurements' => 'nullable|array',
-            'event_id' => 'nullable|exists:events,id',
-            'fabric_description' => 'nullable|string',
-            'model_photo' => 'nullable|string',
-            'status' => 'nullable|in:pending,in_progress,ready,delivered,cancelled',
-            'price' => 'nullable|numeric',
-            'deposit_paid' => 'nullable|numeric',
-            'due_date' => 'nullable|date',
-            'due_date_remaining' => 'nullable|date',
-            'notes' => 'nullable|string',
-        ]);
-
-        if (empty($validated['client_id']) && empty($validated['new_client'])) {
-            return response()->json(['message' => 'Le client est requis.'], 422);
+        $uploadedFiles = [];
+        if ($request->hasFile('images')) {
+            $uploadedFiles = $request->file('images');
         }
 
-        // 🔥 USE TRANSACTION for consistency
-        $commande = DB::transaction(function () use ($validated, $request) {
-            $clientId = $validated['client_id'] ?? null;
+        $commande = $this->commandeService->createCommande(
+            $request->user(),
+            $request->validated(),
+            $uploadedFiles
+        );
 
-            if (!$clientId && !empty($validated['new_client'])) {
-                $client = \App\Models\Client::create([
-                    'tailor_id' => $request->user()->id,
-                    'full_name' => $validated['new_client']['full_name'],
-                    'phone' => $validated['new_client']['phone'] ?? null,
-                ]);
-
-                if (!empty($validated['new_client']['measurements'])) {
-                    $client->measurement()->create($validated['new_client']['measurements']);
-                }
-
-                $clientId = $client->id;
-            }
-
-            $commandeData = collect($validated)->except(['new_client', 'images'])->toArray();
-            $commandeData['client_id'] = $clientId;
-            $commandeData['tailor_id'] = $request->user()->id;
-
-            $uploadedImages = [];
-            if ($request->hasFile('images')) {
-                $files = $request->file('images');
-                if (isset($files['model'])) {
-                    $uploadedImages['model'] = $files['model']->store('commandes', 'public');
-                }
-                if (isset($files['fabric'])) {
-                    $uploadedImages['fabric'] = $files['fabric']->store('commandes', 'public');
-                }
-            }
-
-            if (!empty($uploadedImages)) {
-                $commandeData['images'] = $uploadedImages;
-            }
-
-            $commande = Commande::create($commandeData);
-
-            if ($commande->deposit_paid > 0) {
-                \App\Models\Revenue::create([
-                    'user_id' => $request->user()->id,
-                    'commande_id' => $commande->id,
-                    'client_id' => $clientId,
-                    'amount' => $commande->deposit_paid,
-                    'payment_date' => now(),
-                    'type' => 'advance',
-                    'status' => 'completed',
-                ]);
-            }
-
-            return $commande;
-        });
-
-        // 🔥 EAGER LOAD before response
-        $commande->load(['client:id,full_name,phone', 'event:id,name,date']);
-
-        // 💥 Invalidate cache
-        Cache::tags(["tailor_{$request->user()->id}_commandes"])->flush();
-
-        return response()->json($commande, 201);
+        return $this->createdResponse($commande, 'Commande enregistrée avec succès.');
     }
 
-    public function update(Request $request, Commande $commande)
+    public function show(Commande $commande): JsonResponse
+    {
+        Gate::authorize('view', $commande);
+
+        $commandeDetails = $this->commandeService->getCommandeDetails($commande);
+
+        return $this->successResponse($commandeDetails, 'Détails de la commande récupérés.');
+    }
+
+    public function update(UpdateCommandeRequest $request, Commande $commande): JsonResponse
     {
         Gate::authorize('update', $commande);
 
-        $validated = $request->validate([
-            'client_id' => 'sometimes|exists:clients,id',
-            'event_id' => 'nullable|exists:events,id',
-            'fabric_description' => 'nullable|string',
-            'model_photo' => 'nullable|string',
-            'status' => 'sometimes|in:pending,in_progress,ready,delivered,cancelled',
-            'price' => 'nullable|numeric',
-            'deposit_paid' => 'nullable|numeric',
-            'due_date' => 'nullable|date',
-            'due_date_remaining' => 'nullable|date',
-            'notes' => 'nullable|string',
-        ]);
-
-        $oldDeposit = collect($commande)->get('deposit_paid');
-        $updateData = $validated;
-
-        $uploadedImages = $commande->images ?? [];
+        $uploadedFiles = [];
         if ($request->hasFile('images')) {
-            $files = $request->file('images');
-            if (isset($files['model'])) {
-                $uploadedImages['model'] = $files['model']->store('commandes', 'public');
-            }
-            if (isset($files['fabric'])) {
-                $uploadedImages['fabric'] = $files['fabric']->store('commandes', 'public');
-            }
+            $uploadedFiles = $request->file('images');
         }
 
-        if (!empty($uploadedImages)) {
-            $updateData['images'] = $uploadedImages;
-        }
+        $updatedCommande = $this->commandeService->updateCommande(
+            $commande,
+            $request->validated(),
+            $uploadedFiles
+        );
 
-        // 🔥 Use transaction for consistency
-        DB::transaction(function () use ($commande, $updateData, $validated, $oldDeposit, $request) {
-            $commande->update($updateData);
-
-            if (array_key_exists('deposit_paid', $validated) && $validated['deposit_paid'] > $oldDeposit) {
-                \App\Models\Revenue::create([
-                    'user_id' => $request->user()->id,
-                    'commande_id' => $commande->id,
-                    'client_id' => $commande->client_id,
-                    'amount' => $validated['deposit_paid'] - $oldDeposit,
-                    'payment_date' => now(),
-                    'type' => $commande->price && $validated['deposit_paid'] >= $commande->price ? 'final' : 'advance',
-                    'status' => 'completed',
-                ]);
-            }
-        });
-
-        // 💥 Invalidate cache
-        Cache::tags(["tailor_{$commande->tailor_id}_commandes"])->flush();
-
-        $commande->load(['client:id,full_name,phone', 'event:id,name,date']);
-
-        return response()->json($commande);
+        return $this->successResponse($updatedCommande, 'Commande mise à jour avec succès.');
     }
 
-    public function destroy(Commande $commande)
+    public function destroy(Commande $commande): JsonResponse
     {
         Gate::authorize('delete', $commande);
 
-        $tailor_id = $commande->tailor_id;
-        $commande->delete();
+        $this->commandeService->deleteCommande($commande);
 
-        // 💥 Invalidate cache
-        Cache::tags(["tailor_{$tailor_id}_commandes"])->flush();
+        return $this->noContentResponse();
+    }
 
-        return response()->json(null, 204);
+    public function updateStatus(Request $request, Commande $commande): JsonResponse
+    {
+        Gate::authorize('update', $commande);
+
+        $request->validate([
+            'status' => 'required|in:pending,in_progress,ready,delivered,cancelled',
+        ]);
+
+        $updatedCommande = $this->commandeService->updateStatus(
+            $commande,
+            $request->input('status')
+        );
+
+        return $this->successResponse($updatedCommande, 'Statut de la commande mis à jour.');
     }
 }
-

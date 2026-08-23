@@ -3,81 +3,72 @@
 namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
+use App\Http\Requests\V2\Event\StoreEventRequest;
 use App\Models\Event;
+use App\Repositories\Contracts\EventRepositoryInterface;
+use App\Traits\ApiResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Cache;
 
 class EventController extends Controller
 {
-    public function index(Request $request)
+    use ApiResponse;
+
+    public function __construct(
+        protected EventRepositoryInterface $eventRepository
+    ) {}
+
+    public function index(Request $request): JsonResponse
     {
         Gate::authorize('viewAny', Event::class);
 
-        $user = $request->user();
-        $page = $request->input('page', 1);
-        $perPage = $request->input('per_page', 20);
-        $isTailor = $user->hasRole('tailor');
+        $perPage = min((int) $request->input('per_page', 20), 100);
+        $events = $this->eventRepository->getPaginated($perPage);
 
-        $cacheKey = $isTailor ? "events_tailor_page_{$page}_{$perPage}" : "events_admin_page_{$page}_{$perPage}";
-        $tags = $isTailor ? ['tailor_' . $user->id, 'events'] : ['events'];
-
-        $events = Cache::tags($tags)->remember($cacheKey, 3600, function () use ($request, $perPage, $isTailor, $user) {
-            return Event::with(['commandes' => function($q) use ($isTailor, $user) {
-                if ($isTailor) {
-                    $q->where('tailor_id', $user->id)->with('client');
-                } else {
-                    $q->with('client', 'tailor');
-                }
-            }])->orderBy('date', 'asc')->paginate($perPage);
-        });
-
-        return response()->json($events);
+        return $this->paginatedResponse($events, 'Liste des événements récupérée.');
     }
 
-    public function store(Request $request)
+    public function upcoming(): JsonResponse
+    {
+        Gate::authorize('viewAny', Event::class);
+
+        $events = $this->eventRepository->getAllUpcoming();
+
+        return $this->successResponse($events, 'Événements à venir récupérés.');
+    }
+
+    public function store(StoreEventRequest $request): JsonResponse
     {
         Gate::authorize('create', Event::class);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|in:general,korite,tabaski,gammu,magal,mariage,bapteme,anniversaire,autre',
-            'date' => 'nullable|date',
-            'description' => 'nullable|string',
-            'is_recurring' => 'boolean',
-        ]);
+        $event = $this->eventRepository->create($request->validated());
 
-        $event = Event::create($validated);
-        return response()->json($event, 201);
+        return $this->createdResponse($event, 'Événement créé avec succès.');
     }
 
-    public function show(Event $event)
+    public function show(Event $event): JsonResponse
     {
         Gate::authorize('view', $event);
-        return response()->json($event);
+
+        return $this->successResponse($event, 'Détails de l\'événement.');
     }
 
-    public function update(Request $request, Event $event)
+    public function update(StoreEventRequest $request, Event $event): JsonResponse
     {
         Gate::authorize('update', $event);
 
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'type' => 'sometimes|in:general,korite,tabaski,gammu,magal,mariage,bapteme,anniversaire,autre',
-            'date' => 'nullable|date',
-            'description' => 'nullable|string',
-            'is_recurring' => 'boolean',
-        ]);
+        $updatedEvent = $this->eventRepository->update($event, $request->validated());
 
-        $event->update($validated);
-        return response()->json($event);
+        return $this->successResponse($updatedEvent, 'Événement mis à jour avec succès.');
     }
 
-    public function destroy(Event $event)
+    public function destroy(Event $event): JsonResponse
     {
         Gate::authorize('delete', $event);
-        $event->delete();
-        return response()->json(null, 204);
+
+        $this->eventRepository->delete($event);
+
+        return $this->noContentResponse();
     }
 }
