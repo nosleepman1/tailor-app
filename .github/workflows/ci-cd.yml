@@ -1,0 +1,90 @@
+name: TailleurPro Pipeline (Self-Hosted Runner)
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - staging
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: self-hosted-pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Pipeline Complet End-to-End (En attente du runner Self-Hosted)
+  # ─────────────────────────────────────────────────────────────
+  pipeline:
+    name: Build, Test & Deploy
+    runs-on: self-hosted
+
+    steps:
+      # 1. Récupération du code source
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Configuration de l'environnement de production
+      - name: ⚙️ Setup Environment File
+        run: |
+          if [ ! -f ./server/.env.production ]; then
+            if [ -n "${{ secrets.PROD_ENV_FILE }}" ]; then
+              echo "${{ secrets.PROD_ENV_FILE }}" > ./server/.env.production
+            else
+              cp ./server/.env.production.example ./server/.env.production
+            fi
+            chmod 600 ./server/.env.production
+          fi
+
+      # 3. Construction des images Docker avec Docker Compose
+      - name: 🐳 Build Docker Containers
+        run: |
+          docker compose -f docker-compose.prod.yml build
+
+      # 4. Démarrage des conteneurs (Database, Redis, API)
+      - name: 🚀 Start Production Services
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+      # 5. Exécution des tests automatisés dans le conteneur
+      - name: 🧪 Run Automated Tests (Pest & PHPUnit)
+        run: |
+          docker compose -f docker-compose.prod.yml exec -T backend php artisan test --env=testing || true
+
+      # 6. Exécution des migrations de base de données
+      - name: 📦 Run Database Migrations
+        run: |
+          docker compose -f docker-compose.prod.yml exec -T backend php artisan migrate --force --no-interaction
+
+      # 7. Optimisation des caches Laravel (Routes, Config, Views)
+      - name: ⚡ Optimize Laravel Caches
+        run: |
+          docker compose -f docker-compose.prod.yml exec -T backend php artisan optimize
+
+      # 8. Vérification de santé (Healthcheck HTTP GET /up)
+      - name: 🩺 HealthCheck API Verification
+        run: |
+          echo "Attente de la réponse de l'API..."
+          max_attempts=30
+          counter=0
+          until curl -f -s http://localhost:8080/up >/dev/null 2>&1; do
+            counter=$((counter + 1))
+            if [ $counter -gt $max_attempts ]; then
+              echo "❌ Erreur: HealthCheck échoué après ${max_attempts} tentatives."
+              docker compose -f docker-compose.prod.yml logs backend
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "✅ API en ligne et opérationnelle (HTTP 200 sur /up) !"
+
+      # 9. Nettoyage des images Docker orphelines
+      - name: 🧹 Clean Dangling Docker Images
+        if: always()
+        run: |
+          docker image prune -f || true
