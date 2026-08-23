@@ -3,11 +3,18 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
 const getBaseUrl = (): string => {
-  // 1. Check if configured in app.json extra
-  const extraApiUrl = Constants.expoConfig?.extra?.apiUrl;
-  if (extraApiUrl) return extraApiUrl;
+  // 1. Check EXPO_PUBLIC_API_URL from mobile/.env (Ngrok / Production)
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
 
-  // 2. Default Wi-Fi IP and dedicated port 8008 for direct iPhone access
+  // 2. Check if configured in app.json extra
+  const extraApiUrl = Constants.expoConfig?.extra?.apiUrl;
+  if (extraApiUrl) {
+    return extraApiUrl;
+  }
+
+  // 3. Default Wi-Fi IP and dedicated port 8008 for direct iPhone access
   return 'http://192.168.1.16:8008/api/v2';
 };
 
@@ -15,10 +22,11 @@ export const API_URL = getBaseUrl();
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
-  timeout: 15000,
+  timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'ngrok-skip-browser-warning': 'true', // Skip Ngrok warning banner automatically
   },
 });
 
